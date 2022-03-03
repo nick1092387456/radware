@@ -2,22 +2,15 @@ const path = require('path')
 const { Client } = require('ssh2')
 const conn = new Client()
 require('dotenv').config({ path: path.resolve(__dirname, '../', '.env') })
-const {
-  parseCSV,
-  buildFilterCommand,
-  buildFeatureCommand,
-  packCommand,
-} = require('./library')
+const { removeAllSetting } = require('./library')
 
 conn
   .on('ready', () => {
     console.log('Client :: ready')
     conn.shell((err, stream) => {
       if (err) throw err
-      let result = ''
       stream
         .on('data', (data) => {
-          result += data.toString()
           console.log(data.toString())
         })
         .on('close', () => {
@@ -25,22 +18,8 @@ conn
           conn.end()
         })
       ;(async () => {
-        let url = await parseCSV()
-        let filterCMD = await buildFilterCommand(url)
-        for (let i = 0, j = filterCMD.length; i < j; i++) {
-          stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
-        }
-
-        let featureCMD = await buildFeatureCommand(url)
-        for (let i = 0, j = featureCMD.length; i < j; i++) {
-          stream.write(`${featureCMD[i]}\n\n\n\n`)
-        }
-
-        for (let i = 0, j = url.length; i <= j; i++) {
-          let id = 300001 + i
-          stream.write(`${packCommand(id)}\n`)
-        }
-
+        let removeCMD = removeAllSetting()
+        removeCMD.forEach((_removeCMD) => stream.write(`${_removeCMD}`))
         stream.write('logout\ny\n')
       })()
     })

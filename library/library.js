@@ -85,8 +85,6 @@ function removeAllSetting() {
   })
 }
 
-removeAllSetting()
-
 module.exports = {
   parseCSV,
   buildAttribute,
