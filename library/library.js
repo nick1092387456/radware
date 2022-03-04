@@ -4,7 +4,7 @@ const csv = require('fast-csv')
 const date = require('date-and-time')
 
 //function area
-function parseCSV(fileName = '專案惡意中繼站清單_DN_forTest.csv') {
+function parseCSV(fileName) {
   return new Promise((res, rej) => {
     let URLList = []
     fs.createReadStream(path.resolve(__dirname, '../public', fileName))
@@ -13,7 +13,7 @@ function parseCSV(fileName = '專案惡意中繼站清單_DN_forTest.csv') {
       .on('data', (row) => {
         if (fileName === 'Hinet清單.csv') {
           URLList.push('H_' + row['DN/IP-List'])
-        } else if (fileName === 'GSN清單') {
+        } else if (fileName === 'GSN清單.csv') {
           URLList.push('G_' + row['DN/IP-List'])
         }
       })
@@ -28,9 +28,9 @@ function buildAttribute() {
   return `hidden attributes values create type_1 User -ti 1 -va 10001`
 }
 
-function buildFilterCommand(url) {
+function buildFilterCommand(url, platform) {
   let log = `${url.join(',')}`
-  generateLog(log)
+  generateLog(log, platform)
   return url.map((_url) => {
     let urlParse = _url
       .split('.')
@@ -51,10 +51,10 @@ function packCommand(id) {
   return `hidden attacks attributes create ${id} type_1 attribute_10001 -ti 1 -va 10001`
 }
 
-function generateLog(content = 'empty') {
+function generateLog(content = 'empty', platform) {
   const now = new Date()
-  let LogName = date.format(now, 'YYYY-MM-DD_HHmm') + '.txt'
-  let lastTimeDoing = 'lastTimeDoing.txt'
+  let LogName = platform + date.format(now, 'YYYY-MM-DD_HHmm') + '.txt'
+  let lastTimeDoing = platform + 'lastTimeDoing.txt'
   fs.writeFileSync(
     path.resolve(__dirname, '../cfg/history', LogName),
     content,
@@ -77,14 +77,13 @@ function generateLog(content = 'empty') {
   )
 }
 
-function removeAllSetting() {
-  let fileName = 'lastTimeDoing.txt'
+function removeAllSetting(fileName) {
   let data = fs
     .readFileSync(path.resolve(__dirname, '../cfg', fileName), {
       encoding: 'utf8',
-      flag: 'r',
     })
     .split(',')
+
   return data.map((url, index) => {
     let id = 320001 + index
     return `dp signatures-protection attacks user del ${id}\n dp signatures-protection filter basic-filters user del ${url}\n`
