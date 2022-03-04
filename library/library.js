@@ -11,10 +11,16 @@ function parseCSV(fileName = '專案惡意中繼站清單_DN_forTest.csv') {
       .pipe(csv.parse({ headers: true }))
       .on('error', (error) => console.error(error))
       .on('data', (row) => {
-        URLList.push(row['DN/IP-List'])
-        res(URLList)
+        if (fileName === 'Hinet清單.csv') {
+          URLList.push('H_' + row['DN/IP-List'])
+        } else if (fileName === 'GSN清單') {
+          URLList.push('G_' + row['DN/IP-List'])
+        }
       })
-      .on('end', (rowCount) => console.log(`Parsed ${rowCount} rows`))
+      .on('end', (rowCount) => {
+        console.log(`Parsed ${rowCount} rows`)
+        if (URLList.length) res(URLList)
+      })
   })
 }
 
@@ -36,7 +42,7 @@ function buildFilterCommand(url) {
 
 function buildFeatureCommand(name) {
   return name.map((_name, index) => {
-    let id = index + 300001
+    let id = index + 320001
     return `dp signatures-protection attacks user setCreate ${id} -n ${_name} -f ${_name} -dr "In Bound" -tt 25`
   })
 }
@@ -80,7 +86,7 @@ function removeAllSetting() {
     })
     .split(',')
   return data.map((url, index) => {
-    let id = 300001 + index
+    let id = 320001 + index
     return `dp signatures-protection attacks user del ${id}\n dp signatures-protection filter basic-filters user del ${url}\n`
   })
 }
