@@ -4,6 +4,8 @@ const conn = new Client()
 require('dotenv').config({ path: path.resolve(__dirname, '../', '.env') })
 const { removeAllSetting } = require('./library')
 
+const logName = 'lastTimeDoing.txt'
+
 conn
   .on('ready', () => {
     console.log('Client :: ready')
@@ -18,12 +20,10 @@ conn
           conn.end()
         })
       ;(async () => {
-        let removeCMD = []
-        const NameList = ['GSN_lastTimeDoing.txt', 'Hinet_lastTimeDoing.txt']
-        for (let i = 0, j = NameList.length; i < j; i++) {
-          removeCMD = removeCMD.concat(removeAllSetting(NameList[i]))
+        let removeCMD = await removeAllSetting(logName)
+        for (let i = 0, j = removeCMD.length; i < j; i++) {
+          stream.write(`${removeCMD[i]}`)
         }
-        removeCMD.forEach((_removeCMD) => stream.write(`${_removeCMD}`))
         stream.write('logout\ny\n')
       })()
     })
@@ -31,7 +31,7 @@ conn
   .connect({
     host: process.env.HOST,
     port: 22,
-    username: process.env.USERNAME.toLocaleLowerCase(),
+    username: process.env.LOGIN_AS,
     password: process.env.PRIVATEKEY,
     algorithms: {
       kex: [

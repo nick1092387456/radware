@@ -2,6 +2,16 @@ const fs = require('fs')
 const path = require('path')
 const csv = require('fast-csv')
 const date = require('date-and-time')
+const dir = path.resolve(__dirname, '../public')
+
+// let data = []
+// ;(async () => {
+//   const fileLists = ['Hinet清單.csv', 'GSN清單.csv']
+//   for (let i = 0, j = fileLists.length; i < j; i++) {
+//     data = data.concat(await parseCSV(fileLists[i]))
+//   }
+//   console.log(data)
+// })()
 
 //function area
 function parseCSV(fileName) {
@@ -18,7 +28,7 @@ function parseCSV(fileName) {
         }
       })
       .on('end', (rowCount) => {
-        console.log(`Parsed ${rowCount} rows`)
+        // console.log(`Parsed ${rowCount} rows`)
         if (URLList.length) res(URLList)
       })
   })
@@ -28,9 +38,9 @@ function buildAttribute() {
   return `hidden attributes values create type_1 User -ti 1 -va 10001`
 }
 
-function buildFilterCommand(url, platform) {
+function buildFilterCommand(url) {
   let log = `${url.join(',')}`
-  generateLog(log, platform)
+  generateLog(log)
   return url.map((_url) => {
     let urlParse = _url
       .split('.')
@@ -51,10 +61,10 @@ function packCommand(id) {
   return `hidden attacks attributes create ${id} type_1 attribute_10001 -ti 1 -va 10001`
 }
 
-function generateLog(content = 'empty', platform) {
+function generateLog(content = 'empty') {
   const now = new Date()
-  let LogName = platform + date.format(now, 'YYYY-MM-DD_HHmm') + '.txt'
-  let lastTimeDoing = platform + 'lastTimeDoing.txt'
+  let LogName = date.format(now, 'YYYY-MM-DD_HHmm') + '.txt'
+  let lastTimeDoing = 'lastTimeDoing.txt'
   fs.writeFileSync(
     path.resolve(__dirname, '../cfg/history', LogName),
     content,

@@ -9,6 +9,7 @@ const {
   buildFilterCommand,
   buildFeatureCommand,
   packCommand,
+  generateLog,
 } = require('./library')
 
 conn
@@ -16,52 +17,47 @@ conn
     console.log('Client :: ready')
     conn.shell((err, stream) => {
       if (err) throw err
-      let result = ''
+      // let message = ''
+      const fileNames = ['Hinet清單.csv', 'GSN清單.csv']
       stream
         .on('data', (data) => {
-          result += data.toString()
+          // message += data.toString()
           console.log(data.toString())
         })
         .on('close', () => {
           console.log('Stream :: close')
+          // generateLog(message)
           conn.end()
         })
-      fs.readdir(dir, (err, fileNames) => {
-        if (err) throw err
+      ;(async () => {
+        let url = []
         for (let i = 0, j = fileNames.length; i < j; i++) {
-          ;(async () => {
-            let url = await parseCSV(fileNames[i])
-            let platform = ''
-            if (fileName === 'Hinet清單.csv') {
-              platform = 'Hinet_'
-            } else if (fileName === 'GSN清單.csv') {
-              platform = 'GSN_'
-            }
-            let filterCMD = await buildFilterCommand(url, platform)
-            for (let i = 0, j = filterCMD.length; i < j; i++) {
-              stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
-            }
-
-            let featureCMD = await buildFeatureCommand(url)
-            for (let i = 0, j = featureCMD.length; i < j; i++) {
-              stream.write(`${featureCMD[i]}\n\n\n\n`)
-            }
-
-            for (let i = 0, j = url.length; i <= j; i++) {
-              let id = 320001 + i
-              stream.write(`${packCommand(id)}\n`)
-            }
-
-            stream.write('logout\ny\n')
-          })()
+          url = url.concat(await parseCSV(fileNames[i]))
         }
-      })
+
+        let filterCMD = await buildFilterCommand(url)
+        for (let i = 0, j = filterCMD.length; i < j; i++) {
+          stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
+        }
+
+        let featureCMD = await buildFeatureCommand(url)
+        for (let i = 0, j = featureCMD.length; i < j; i++) {
+          stream.write(`${featureCMD[i]}\n\n\n\n`)
+        }
+
+        for (let i = 0, j = url.length; i <= j; i++) {
+          let id = 320001 + i
+          stream.write(`${packCommand(id)}\n`)
+        }
+
+        stream.write('logout\ny\n')
+      })()
     })
   })
   .connect({
     host: process.env.HOST,
     port: 22,
-    username: process.env.USERNAME.toLocaleLowerCase(),
+    username: process.env.LOGIN_AS.toLocaleLowerCase(),
     password: process.env.PRIVATEKEY,
     algorithms: {
       kex: [
