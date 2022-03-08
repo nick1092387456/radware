@@ -1,15 +1,12 @@
-const fs = require('fs')
 const path = require('path')
 const { Client } = require('ssh2')
 const conn = new Client()
-const dir = path.resolve(__dirname, '../public')
 require('dotenv').config({ path: path.resolve(__dirname, '../', '.env') })
 const {
   parseCSV,
   buildFilterCommand,
   buildFeatureCommand,
   packCommand,
-  generateLog,
 } = require('./library')
 
 conn
