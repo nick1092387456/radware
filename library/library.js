@@ -38,9 +38,9 @@ function buildAttribute() {
   return `hidden attributes values create type_1 User -ti 1 -va 10001`
 }
 
-function buildFilterCommand(url) {
+function buildFilterCommand(url, device) {
   let log = `${url.join(',')}`
-  generateLog(log)
+  generateLog(log, device)
   return url.map((_url) => {
     let urlParse = _url
       .split('.')
@@ -61,12 +61,12 @@ function packCommand(id) {
   return `hidden attacks attributes create ${id} type_1 attribute_10001 -ti 1 -va 10001`
 }
 
-function generateLog(content = 'empty') {
+function generateLog(content = 'empty', device, locat) {
   const now = new Date()
-  let LogName = date.format(now, 'YYYY-MM-DD_HHmm') + '.txt'
-  let lastTimeDoing = 'lastTimeDoing.txt'
+  let dateLog = `${date.format(now, 'YYYY-MM-DD')}_${device}.txt`
+  let previousLog = `${device}.txt`
   fs.writeFileSync(
-    path.resolve(__dirname, '../cfg/history', LogName),
+    path.resolve(__dirname, '../cfg/history', dateLog),
     content,
     (err) => {
       if (err) {
@@ -76,7 +76,7 @@ function generateLog(content = 'empty') {
     }
   )
   fs.writeFileSync(
-    path.resolve(__dirname, '../cfg', lastTimeDoing),
+    path.resolve(__dirname, '../cfg', previousLog),
     content,
     (err) => {
       if (err) {

@@ -8,6 +8,7 @@ const {
   buildFilterCommand,
   buildFeatureCommand,
   packCommand,
+  removeAllSetting,
 } = require('./library')
 
 let device_1_toggle = 0
@@ -18,6 +19,9 @@ const args = process.argv.slice(2)
 if (process.argv.length === 3) {
   if (args[0] === '01') device_1_toggle = 1
   if (args[0] === '02') device_2_toggle = 1
+  console.log(
+    `輸入錯誤!! 請輸入預更新的設備".\\addURL.js 01" 或 ".\\addURL.js 02"，若沒輸入則為全部更新`
+  )
 } else if (process.argv.length === 2) {
   device_1_toggle = 1
   device_2_toggle = 1
@@ -30,7 +34,7 @@ if (process.argv.length === 3) {
 if (device_1_toggle) {
   conn
     .on('ready', () => {
-      console.log('Client :: ready')
+      console.log('Device_01 connected')
       conn.shell((err, stream) => {
         if (err) throw err
         // let message = ''
@@ -38,20 +42,25 @@ if (device_1_toggle) {
         stream
           .on('data', (data) => {
             // message += data.toString()
-            console.log(data.toString())
+            // console.log(data.toString())
           })
           .on('close', () => {
-            console.log('Device_01 finished')
+            console.log('Device_01 adding success. Connection closed.')
             // generateLog(message)
             conn.end()
           })
         ;(async () => {
           let url = []
+          let removeCMD = await removeAllSetting('device_02.txt')
+          for (let i = 0, j = removeCMD.length; i < j; i++) {
+            stream.write(`${removeCMD[i]}`)
+          }
+
           for (let i = 0, j = fileNames.length; i < j; i++) {
             url = url.concat(await parseCSV(fileNames[i]))
           }
 
-          let filterCMD = await buildFilterCommand(url)
+          let filterCMD = await buildFilterCommand(url, 'device_01')
           for (let i = 0, j = filterCMD.length; i < j; i++) {
             stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
           }
@@ -108,7 +117,7 @@ if (device_1_toggle) {
 if (device_2_toggle) {
   conn2
     .on('ready', () => {
-      console.log('Client :: ready')
+      console.log('Device_02 connected')
       conn2.shell((err, stream) => {
         if (err) throw err
         // let message = ''
@@ -116,20 +125,25 @@ if (device_2_toggle) {
         stream
           .on('data', (data) => {
             // message += data.toString()
-            console.log(data.toString())
+            // console.log(data.toString())
           })
           .on('close', () => {
-            console.log('Device_02 finished')
+            console.log('Device_02 adding success. Connection closed.')
             // generateLog(message)
             conn2.end()
           })
         ;(async () => {
           let url = []
+          let removeCMD = await removeAllSetting('device_02.txt')
+          for (let i = 0, j = removeCMD.length; i < j; i++) {
+            stream.write(`${removeCMD[i]}`)
+          }
+
           for (let i = 0, j = fileNames.length; i < j; i++) {
             url = url.concat(await parseCSV(fileNames[i]))
           }
 
-          let filterCMD = await buildFilterCommand(url)
+          let filterCMD = await buildFilterCommand(url, 'device_02')
           for (let i = 0, j = filterCMD.length; i < j; i++) {
             stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
           }
