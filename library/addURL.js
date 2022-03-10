@@ -9,19 +9,25 @@ const {
   buildFeatureCommand,
   packCommand,
   removeAllSetting,
+  createLog,
 } = require('./library')
 
 let device_1_toggle = 0
 let device_2_toggle = 0
+const deviceList = ['device_01', 'device_02']
 
 const args = process.argv.slice(2)
 
 if (process.argv.length === 3) {
-  if (args[0] === '01') device_1_toggle = 1
-  if (args[0] === '02') device_2_toggle = 1
-  console.log(
-    `輸入錯誤!! 請輸入預更新的設備".\\addURL.js 01" 或 ".\\addURL.js 02"，若沒輸入則為全部更新`
-  )
+  if (args[0] === '01') {
+    device_1_toggle = 1
+  } else if (args[0] === '02') {
+    device_2_toggle = 1
+  } else {
+    console.log(
+      `輸入錯誤!! 請輸入預更新的設備".\\addURL.js 01" 或 ".\\addURL.js 02"，若沒輸入則為全部更新`
+    )
+  }
 } else if (process.argv.length === 2) {
   device_1_toggle = 1
   device_2_toggle = 1
@@ -34,47 +40,59 @@ if (process.argv.length === 3) {
 if (device_1_toggle) {
   conn
     .on('ready', () => {
-      console.log('Device_01 connected')
+      console.log(`${deviceList[0]} connected`)
       conn.shell((err, stream) => {
         if (err) throw err
-        // let message = ''
+        let message = ''
         const fileNames = ['Hinet清單.csv', 'GSN清單.csv']
         stream
           .on('data', (data) => {
-            // message += data.toString()
+            message += data.toString()
             // console.log(data.toString())
           })
           .on('close', () => {
-            console.log('Device_01 adding success. Connection closed.')
-            // generateLog(message)
+            console.log(`${deviceList[0]} adding success. Connection closed.`)
+            createLog(message, deviceList[0], 'CMDResponse')
             conn.end()
           })
         ;(async () => {
-          let url = []
-          let removeCMD = await removeAllSetting('device_02.txt')
+          let removeCMD = await removeAllSetting(`${deviceList[0]}.txt`)
+          //remove last time added url.
           for (let i = 0, j = removeCMD.length; i < j; i++) {
             stream.write(`${removeCMD[i]}`)
+            // console.log(removeCMD[i])
           }
+
+          //empty previousLog
+          createLog('', deviceList[0], 'previousLog')
+          createLog('', deviceList[0], 'dailyLog')
 
           for (let i = 0, j = fileNames.length; i < j; i++) {
-            url = url.concat(await parseCSV(fileNames[i]))
-          }
+            let URLList = []
+            let filterCMD = []
+            //parse CSV list to URL
+            URLList = URLList.concat(await parseCSV(fileNames[i]))
+            //buildFilterCommand
+            filterCMD = await buildFilterCommand(
+              URLList,
+              deviceList[0],
+              fileNames[i]
+            )
 
-          let filterCMD = await buildFilterCommand(url, 'device_01')
-          for (let i = 0, j = filterCMD.length; i < j; i++) {
-            stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
+            for (let i = 0, j = filterCMD.length; i < j; i++) {
+              stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
+              // console.log(filterCMD[i])
+            }
+            let featureCMD = await buildFeatureCommand(URLList, fileNames[i])
+            for (let i = 0, j = featureCMD.length; i < j; i++) {
+              stream.write(`${featureCMD[i]}\n\n\n\n`)
+              // console.log(featureCMD[i])
+            }
+            for (let i = 0, j = URLList.length; i <= j; i++) {
+              let id = 300001 + i
+              stream.write(`${packCommand(id)}\n`)
+            }
           }
-
-          let featureCMD = await buildFeatureCommand(url)
-          for (let i = 0, j = featureCMD.length; i < j; i++) {
-            stream.write(`${featureCMD[i]}\n\n\n\n`)
-          }
-
-          for (let i = 0, j = url.length; i <= j; i++) {
-            let id = 320001 + i
-            stream.write(`${packCommand(id)}\n`)
-          }
-
           stream.write('logout\ny\n')
         })()
       })
@@ -117,24 +135,24 @@ if (device_1_toggle) {
 if (device_2_toggle) {
   conn2
     .on('ready', () => {
-      console.log('Device_02 connected')
+      console.log(`${deviceList[1]} connected.`)
       conn2.shell((err, stream) => {
         if (err) throw err
-        // let message = ''
+        let message = ''
         const fileNames = ['Hinet清單.csv', 'GSN清單.csv']
         stream
           .on('data', (data) => {
-            // message += data.toString()
+            message += data.toString()
             // console.log(data.toString())
           })
           .on('close', () => {
-            console.log('Device_02 adding success. Connection closed.')
-            // generateLog(message)
+            console.log(`${deviceList[1]} adding success. Connection closed.`)
+            createLog(message, deviceList[1], 'CMDResponse')
             conn2.end()
           })
         ;(async () => {
           let url = []
-          let removeCMD = await removeAllSetting('device_02.txt')
+          let removeCMD = await removeAllSetting(`${deviceList[1]}.txt`)
           for (let i = 0, j = removeCMD.length; i < j; i++) {
             stream.write(`${removeCMD[i]}`)
           }
@@ -143,7 +161,7 @@ if (device_2_toggle) {
             url = url.concat(await parseCSV(fileNames[i]))
           }
 
-          let filterCMD = await buildFilterCommand(url, 'device_02')
+          let filterCMD = await buildFilterCommand(url, `${deviceList[1]}`)
           for (let i = 0, j = filterCMD.length; i < j; i++) {
             stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
           }
@@ -154,7 +172,7 @@ if (device_2_toggle) {
           }
 
           for (let i = 0, j = url.length; i <= j; i++) {
-            let id = 320001 + i
+            let id = 300001 + i
             stream.write(`${packCommand(id)}\n`)
           }
 
