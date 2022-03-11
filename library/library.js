@@ -2,7 +2,6 @@ const fs = require('fs')
 const path = require('path')
 const csv = require('fast-csv')
 const date = require('date-and-time')
-const dir = path.resolve(__dirname, '../public')
 const now = new Date()
 
 //function area
@@ -17,8 +16,8 @@ function parseCSV(fileName) {
       })
       .on('end', (rowCount) => {
         fileName === 'Hinet清單.csv'
-          ? console.log(`Hinet清單已處理 ${rowCount} 個網址...`)
-          : console.log(`GSP清單已處理 ${rowCount} 個網址...`)
+          ? console.log(`Hinet清單處理中，共 ${rowCount} 個網址...`)
+          : console.log(`GSP清單處理中，共 ${rowCount} 個網址...`)
         if (URLList.length) res(URLList)
       })
   })
@@ -48,18 +47,14 @@ function buildFilterCommand(url, device, fileName) {
   })
 }
 
-function buildFeatureCommand(url, fileName) {
+function buildFeatureCommand(url, fileName, idCount) {
   let filterNameTitle = ''
   if (fileName === 'Hinet清單.csv') {
     filterNameTitle = 'H_'
   } else if (fileName === 'GSN清單.csv') {
     filterNameTitle = 'G_'
   }
-
-  return url.map((_url, index) => {
-    let id = index + 300001
-    return `dp signatures-protection attacks user setCreate ${id} -n ${filterNameTitle}${_url} -f ${filterNameTitle}${_url} -dr "In Bound" -tt 25`
-  })
+  return `dp signatures-protection attacks user setCreate ${idCount} -n ${filterNameTitle}${url} -f ${filterNameTitle}${url} -dr "In Bound" -tt 25`
 }
 
 function packCommand(id) {
@@ -94,10 +89,10 @@ function createLog(content = 'empty', device, type) {
   )
 }
 
-function writeLog(filterName, device) {
+function writeLog(content, logName) {
   fs.appendFile(
-    path.resolve(__dirname, '../cfg', `${device}.txt`),
-    `${filterName},`,
+    path.resolve(__dirname, '../cfg', `${logName}.txt`),
+    `${content},`,
     (err) => {
       if (err) throw err
     }
@@ -107,9 +102,9 @@ function writeLog(filterName, device) {
     path.resolve(
       __dirname,
       '../cfg/history',
-      `${date.format(now, 'YYYY-MM-DD')}_${device}.txt`
+      `${date.format(now, 'YYYY-MM-DD')}_${logName}.txt`
     ),
-    `${filterName},`,
+    `${content},`,
     (err) => {
       if (err) throw err
     }

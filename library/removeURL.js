@@ -106,7 +106,7 @@ if (executiveSwitch) {
         if (err) throw err
         stream
           .on('data', (data) => {
-            console.log(data.toString())
+            // console.log(data.toString())
           })
           .on('close', () => {
             console.log('Stream :: close')

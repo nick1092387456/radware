@@ -57,6 +57,7 @@ if (device_1_toggle) {
           })
         ;(async () => {
           let removeCMD = await removeAllSetting(`${deviceList[0]}.txt`)
+          let idCount = 300001
           //remove last time added url.
           for (let i = 0, j = removeCMD.length; i < j; i++) {
             stream.write(`${removeCMD[i]}`)
@@ -67,33 +68,36 @@ if (device_1_toggle) {
           createLog('', deviceList[0], 'previousLog')
           createLog('', deviceList[0], 'dailyLog')
 
-          for (let i = 0, j = fileNames.length; i < j; i++) {
-            let URLList = []
+          for (let x = 0, y = fileNames.length; x < y; x++) {
             let filterCMD = []
+            let URLList = []
             //parse CSV list to URL
-            URLList = URLList.concat(await parseCSV(fileNames[i]))
+            URLList = URLList.concat(await parseCSV(fileNames[x]))
             //buildFilterCommand
             filterCMD = await buildFilterCommand(
               URLList,
               deviceList[0],
-              fileNames[i]
+              fileNames[x]
             )
 
             for (let i = 0, j = filterCMD.length; i < j; i++) {
               stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
               // console.log(filterCMD[i])
             }
-            let featureCMD = await buildFeatureCommand(URLList, fileNames[i])
-            for (let i = 0, j = featureCMD.length; i < j; i++) {
-              stream.write(`${featureCMD[i]}\n\n\n\n`)
-              // console.log(featureCMD[i])
-            }
-            for (let i = 0, j = URLList.length; i <= j; i++) {
-              let id = 300001 + i
-              stream.write(`${packCommand(id)}\n`)
+
+            for (let i = 0, j = URLList.length; i < j; i++) {
+              let featureCMD = await buildFeatureCommand(
+                URLList[i],
+                fileNames[x],
+                idCount
+              )
+              stream.write(`${featureCMD}\n\n\n\n`)
+              stream.write(`${packCommand(idCount)}\n`)
+              // console.log(featureCMD)
+              idCount++
             }
           }
-          stream.write('logout\ny\n')
+          stream.write('dp update-policies set 1\nlogout\ny\n')
         })()
       })
     })
