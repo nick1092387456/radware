@@ -4,6 +4,7 @@ const conn = new Client()
 const conn2 = new Client()
 require('dotenv').config({ path: path.resolve(__dirname, '../', '.env') })
 const {
+  checkCSVexist,
   parseCSV,
   buildFilterCommand,
   buildFeatureCommand,
@@ -43,61 +44,69 @@ if (device_1_toggle) {
       console.log(`${deviceList[0]} connected`)
       conn.shell((err, stream) => {
         if (err) throw err
-        let message = ''
-        const fileNames = ['Hinet清單.csv', 'GSN清單.csv']
+        let consoleMessage = ''
+        let connectCloseMessage = ''
         stream
           .on('data', (data) => {
-            message += data.toString()
+            consoleMessage += data.toString()
             // console.log(data.toString())
           })
           .on('close', () => {
-            console.log(`${deviceList[0]} adding success. Connection closed.`)
-            createLog(message, deviceList[0], 'CMDResponse')
+            console.log(connectCloseMessage)
+            createLog(consoleMessage, deviceList[0], 'CMDResponse')
             conn.end()
           })
         ;(async () => {
-          let removeCMD = await removeAllSetting(`${deviceList[0]}.txt`)
-          let idCount = 300001
-          //remove last time added url.
-          for (let i = 0, j = removeCMD.length; i < j; i++) {
-            stream.write(`${removeCMD[i]}`)
-            // console.log(removeCMD[i])
-          }
-
-          //empty previousLog
-          createLog('', deviceList[0], 'previousLog')
-          createLog('', deviceList[0], 'dailyLog')
-
-          for (let x = 0, y = fileNames.length; x < y; x++) {
-            let filterCMD = []
-            let URLList = []
-            //parse CSV list to URL
-            URLList = URLList.concat(await parseCSV(fileNames[x]))
-            //buildFilterCommand
-            filterCMD = await buildFilterCommand(
-              URLList,
-              deviceList[0],
-              fileNames[x]
-            )
-
-            for (let i = 0, j = filterCMD.length; i < j; i++) {
-              stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
-              // console.log(filterCMD[i])
+          try {
+            const fileNames = await checkCSVexist()
+            let removeCMD = await removeAllSetting(`${deviceList[0]}.txt`)
+            let idCount = 300001
+            //remove last time added url.
+            for (let i = 0, j = removeCMD.length; i < j; i++) {
+              stream.write(`${removeCMD[i]}`)
+              // console.log(removeCMD[i])
             }
 
-            for (let i = 0, j = URLList.length; i < j; i++) {
-              let featureCMD = await buildFeatureCommand(
-                URLList[i],
-                fileNames[x],
-                idCount
+            //empty previousLog
+            createLog('', deviceList[0], 'previousLog')
+            createLog('', deviceList[0], 'dailyLog')
+
+            for (let x = 0, y = fileNames.length; x < y; x++) {
+              let filterCMD = []
+              let URLList = []
+              //parse CSV list to URL
+              URLList = URLList.concat(await parseCSV(fileNames[x]))
+              //buildFilterCommand
+              filterCMD = await buildFilterCommand(
+                URLList,
+                deviceList[0],
+                fileNames[x]
               )
-              stream.write(`${featureCMD}\n\n\n\n`)
-              stream.write(`${packCommand(idCount)}\n`)
-              // console.log(featureCMD)
-              idCount++
+
+              for (let i = 0, j = filterCMD.length; i < j; i++) {
+                stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
+                // console.log(filterCMD[i])
+              }
+
+              for (let i = 0, j = URLList.length; i < j; i++) {
+                let featureCMD = await buildFeatureCommand(
+                  URLList[i],
+                  fileNames[x],
+                  idCount
+                )
+                stream.write(`${featureCMD}\n\n\n\n`)
+                stream.write(`${packCommand(idCount)}\n`)
+                // console.log(featureCMD)
+                idCount++
+              }
             }
+            connectCloseMessage = `${deviceList[0]} adding success. Connect closed.`
+            stream.write('dp update-policies set 1\nlogout\ny\n')
+          } catch (err) {
+            console.log(err)
+            connectCloseMessage = `${deviceList[0]} Connect closed.`
+            stream.write('logout\ny\n')
           }
-          stream.write('dp update-policies set 1\nlogout\ny\n')
         })()
       })
     })
@@ -139,48 +148,72 @@ if (device_1_toggle) {
 if (device_2_toggle) {
   conn2
     .on('ready', () => {
-      console.log(`${deviceList[1]} connected.`)
+      console.log(`${deviceList[1]} connected`)
       conn2.shell((err, stream) => {
         if (err) throw err
-        let message = ''
-        const fileNames = ['Hinet清單.csv', 'GSN清單.csv']
+        let consoleMessage = ''
+        let connectCloseMessage = ''
         stream
           .on('data', (data) => {
-            message += data.toString()
+            consoleMessage += data.toString()
             // console.log(data.toString())
           })
           .on('close', () => {
-            console.log(`${deviceList[1]} adding success. Connection closed.`)
-            createLog(message, deviceList[1], 'CMDResponse')
+            console.log(connectCloseMessage)
+            createLog(consoleMessage, deviceList[1], 'CMDResponse')
             conn2.end()
           })
         ;(async () => {
-          let url = []
-          let removeCMD = await removeAllSetting(`${deviceList[1]}.txt`)
-          for (let i = 0, j = removeCMD.length; i < j; i++) {
-            stream.write(`${removeCMD[i]}`)
-          }
+          try {
+            const fileNames = await checkCSVexist()
+            let removeCMD = await removeAllSetting(`${deviceList[1]}.txt`)
+            let idCount = 300001
+            //remove last time added url.
+            for (let i = 0, j = removeCMD.length; i < j; i++) {
+              stream.write(`${removeCMD[i]}`)
+              // console.log(removeCMD[i])
+            }
 
-          for (let i = 0, j = fileNames.length; i < j; i++) {
-            url = url.concat(await parseCSV(fileNames[i]))
-          }
+            //empty previousLog
+            createLog('', deviceList[1], 'previousLog')
+            createLog('', deviceList[1], 'dailyLog')
 
-          let filterCMD = await buildFilterCommand(url, `${deviceList[1]}`)
-          for (let i = 0, j = filterCMD.length; i < j; i++) {
-            stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
-          }
+            for (let x = 0, y = fileNames.length; x < y; x++) {
+              let filterCMD = []
+              let URLList = []
+              //parse CSV list to URL
+              URLList = URLList.concat(await parseCSV(fileNames[x]))
+              //buildFilterCommand
+              filterCMD = await buildFilterCommand(
+                URLList,
+                deviceList[1],
+                fileNames[x]
+              )
 
-          let featureCMD = await buildFeatureCommand(url)
-          for (let i = 0, j = featureCMD.length; i < j; i++) {
-            stream.write(`${featureCMD[i]}\n\n\n\n`)
-          }
+              for (let i = 0, j = filterCMD.length; i < j; i++) {
+                stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
+                // console.log(filterCMD[i])
+              }
 
-          for (let i = 0, j = url.length; i <= j; i++) {
-            let id = 300001 + i
-            stream.write(`${packCommand(id)}\n`)
+              for (let i = 0, j = URLList.length; i < j; i++) {
+                let featureCMD = await buildFeatureCommand(
+                  URLList[i],
+                  fileNames[x],
+                  idCount
+                )
+                stream.write(`${featureCMD}\n\n\n\n`)
+                stream.write(`${packCommand(idCount)}\n`)
+                // console.log(featureCMD)
+                idCount++
+              }
+            }
+            connectCloseMessage = `${deviceList[1]} adding success. Connect closed.`
+            stream.write('dp update-policies set 1\nlogout\ny\n')
+          } catch (err) {
+            console.log(err)
+            connectCloseMessage = `${deviceList[1]} Connect closed.`
+            stream.write('logout\ny\n')
           }
-
-          stream.write('logout\ny\n')
         })()
       })
     })

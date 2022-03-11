@@ -5,21 +5,41 @@ const date = require('date-and-time')
 const now = new Date()
 
 //function area
-function parseCSV(fileName) {
+function checkCSVexist() {
+  return new Promise((res, rej) => {
+    fs.readdir(path.resolve(__dirname, '../public'), (err, files) => {
+      if (
+        files.length === 0 ||
+        !(files.includes('Hinet清單.csv') || files.includes('GSN清單.csv'))
+      )
+        rej('請在public資料夾內放入Hinet清單.csv、GSN清單.csv後再執行程式')
+      let result = files.filter((item) => {
+        if (item === 'Hinet清單.csv' || item === 'GSN清單.csv') {
+          return true
+        }
+      })
+      res(result)
+    })
+  })
+}
+
+function parseCSV(csvFileName) {
   return new Promise((res, rej) => {
     let URLList = []
-    fs.createReadStream(path.resolve(__dirname, '../public', fileName))
-      .pipe(csv.parse({ headers: true }))
-      .on('error', (error) => console.error(error))
-      .on('data', (row) => {
-        URLList.push(row['DN/IP-List'])
-      })
-      .on('end', (rowCount) => {
-        fileName === 'Hinet清單.csv'
-          ? console.log(`Hinet清單處理中，共 ${rowCount} 個網址...`)
-          : console.log(`GSP清單處理中，共 ${rowCount} 個網址...`)
-        if (URLList.length) res(URLList)
-      })
+    if (csvFileName) {
+      fs.createReadStream(path.resolve(__dirname, '../public', csvFileName))
+        .pipe(csv.parse({ headers: true }))
+        .on('error', (error) => console.error(error))
+        .on('data', (row) => {
+          URLList.push(row['DN/IP-List'])
+        })
+        .on('end', (rowCount) => {
+          csvFileName === 'Hinet清單.csv'
+            ? console.log(`Hinet清單處理中，共 ${rowCount} 個網址...`)
+            : console.log(`GSP清單處理中，共 ${rowCount} 個網址...`)
+          if (URLList.length) res(URLList)
+        })
+    }
   })
 }
 
@@ -66,7 +86,7 @@ function createLog(content = 'empty', device, type) {
   let fileName = ''
   if (type === 'dailyLog') {
     location = '../cfg/history'
-    fileName = `${date.format(now, 'YYYY-MM-DD')}_${device}.txt`
+    fileName = `${date.format(now, 'YYYY-MM-DD_HH-mm')}_${device}.txt`
   } else if (type === 'previousLog') {
     location = '../cfg'
     fileName = `${device}.txt`
@@ -102,7 +122,7 @@ function writeLog(content, logName) {
     path.resolve(
       __dirname,
       '../cfg/history',
-      `${date.format(now, 'YYYY-MM-DD')}_${logName}.txt`
+      `${date.format(now, 'YYYY-MM-DD_HH-mm')}_${logName}.txt`
     ),
     `${content},`,
     (err) => {
@@ -133,4 +153,5 @@ module.exports = {
   createLog,
   writeLog,
   removeAllSetting,
+  checkCSVexist,
 }
