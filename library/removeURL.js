@@ -117,7 +117,7 @@ if (executiveSwitch) {
           for (let i = 0, j = removeCMD.length; i < j; i++) {
             stream.write(`${removeCMD[i]}`)
           }
-          stream.write('logout\ny\n')
+          stream.write('dp update-policies set 1\nlogout\ny\n')
         })()
       })
     })

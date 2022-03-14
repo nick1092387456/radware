@@ -36,7 +36,7 @@ function parseCSV(csvFileName) {
         .on('end', (rowCount) => {
           csvFileName === 'Hinet清單.csv'
             ? console.log(`Hinet清單處理中，共 ${rowCount} 個網址...`)
-            : console.log(`GSP清單處理中，共 ${rowCount} 個網址...`)
+            : console.log(`GSN清單處理中，共 ${rowCount} 個網址...`)
           if (URLList.length) res(URLList)
         })
     }
