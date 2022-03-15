@@ -3,6 +3,33 @@ const path = require('path')
 const csv = require('fast-csv')
 const date = require('date-and-time')
 const now = new Date()
+const process = require('process')
+const rdl = require('readline')
+const std = process.stdout
+
+//class area
+class Spinner {
+  spin() {
+    //remove the cursor so we can see the effect
+    process.stdout.write('\x1B[?25l')
+    const spinners = ['-', '\\', '|', '/']
+    let index = 0
+    this.timer = setInterval(() => {
+      let line = spinners[index]
+
+      if (line == undefined) {
+        index = 0
+        line = spinners[index]
+      }
+      std.write(line)
+      rdl.cursorTo(std, 0)
+      index = index >= spinners.length ? 0 : index + 1
+    }, 100)
+  }
+  stop() {
+    clearTimeout(this.timer)
+  }
+}
 
 //function area
 function checkCSVexist() {
@@ -154,4 +181,5 @@ module.exports = {
   writeLog,
   removeAllSetting,
   checkCSVexist,
+  Spinner,
 }

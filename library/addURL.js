@@ -11,6 +11,7 @@ const {
   packCommand,
   removeAllSetting,
   createLog,
+  Spinner,
 } = require('./library')
 
 let device_1_toggle = 0
@@ -37,7 +38,7 @@ if (process.argv.length === 3) {
     `請輸入預更新的設備".\\addURL.js 01" 或 ".\\addURL.js 02"，若沒輸入則為全部更新`
   )
 }
-
+const cli_Processing_Hinter = new Spinner()
 if (device_1_toggle) {
   conn
     .on('ready', () => {
@@ -53,10 +54,12 @@ if (device_1_toggle) {
           })
           .on('close', () => {
             console.log(connectCloseMessage)
+            cli_Processing_Hinter.stop()
             createLog(consoleMessage, deviceList[0], 'CMDResponse')
             conn.end()
           })
         ;(async () => {
+          cli_Processing_Hinter.spin()
           try {
             const fileNames = await checkCSVexist()
             let removeCMD = await removeAllSetting(`${deviceList[0]}.txt`)
@@ -100,6 +103,7 @@ if (device_1_toggle) {
                 idCount++
               }
             }
+            // cli_Processing_Hinter.stop()
             connectCloseMessage = `${deviceList[0]} adding success. Connect closed.`
             stream.write('dp update-policies set 1\nlogout\ny\n')
           } catch (err) {
