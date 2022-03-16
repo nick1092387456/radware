@@ -2,7 +2,9 @@ const path = require('path')
 const { Client } = require('ssh2')
 const conn = new Client()
 const conn2 = new Client()
-require('dotenv').config({ path: path.resolve(__dirname, '../', '.env') })
+require('dotenv').config({
+  path: path.resolve(process.cwd(), './config', '.env'),
+})
 const {
   checkCSVexist,
   parseCSV,

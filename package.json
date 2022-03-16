@@ -2,14 +2,26 @@
   "name": "radware",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "bin": "./library/addURL.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "pkg ."
   },
-  "author": "",
+  "pkg": {
+    "scripts": [
+      "./library/*.js"
+    ],
+    "assets": [
+      "./config/*"
+    ],
+    "targets": [
+      "node16-win-x64"
+    ],
+    "outputPath": "library"
+  },
+  "author": "SYSCOM-Ping Feng",
   "license": "ISC",
   "dependencies": {
-    "cli-progress": "^3.10.0",
     "date-and-time": "^2.2.1",
     "dotenv": "^16.0.0",
     "fast-csv": "^4.3.6",

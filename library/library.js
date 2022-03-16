@@ -34,7 +34,7 @@ class Spinner {
 //function area
 function checkCSVexist() {
   return new Promise((res, rej) => {
-    fs.readdir(path.resolve(__dirname, '../public'), (err, files) => {
+    fs.readdir(path.resolve(process.cwd(), './public'), (err, files) => {
       if (
         files.length === 0 ||
         !(files.includes('Hinet清單.csv') || files.includes('GSN清單.csv'))
@@ -54,7 +54,7 @@ function parseCSV(csvFileName) {
   return new Promise((res, rej) => {
     let URLList = []
     if (csvFileName) {
-      fs.createReadStream(path.resolve(__dirname, '../public', csvFileName))
+      fs.createReadStream(path.resolve(process.cwd(), './public', csvFileName))
         .pipe(csv.parse({ headers: true }))
         .on('error', (error) => console.error(error))
         .on('data', (row) => {
@@ -112,20 +112,20 @@ function createLog(content = 'empty', device, type) {
   let location = ''
   let fileName = ''
   if (type === 'dailyLog') {
-    location = '../cfg/history'
+    location = './cfg/history'
     fileName = `${date.format(now, 'YYYY-MM-DD_HH-mm')}_${device}.txt`
   } else if (type === 'previousLog') {
-    location = '../cfg'
+    location = './cfg'
     fileName = `${device}.txt`
   } else if (type === 'CMDResponse') {
-    location = '../cfg/Log'
+    location = './cfg/Log'
     fileName = `${date.format(now, 'YYYY-MM-DD')}_${device}.log`
   } else {
-    location = '../cfg/Error'
+    location = './cfg/Error'
     fileName = `${date.format(now, 'YYYY-MM-DD')}_error.log`
   }
   fs.writeFileSync(
-    path.resolve(__dirname, location, fileName),
+    path.resolve(process.cwd(), location, fileName),
     content,
     (err) => {
       if (err) {
@@ -138,7 +138,7 @@ function createLog(content = 'empty', device, type) {
 
 function writeLog(content, logName) {
   fs.appendFile(
-    path.resolve(__dirname, '../cfg', `${logName}.txt`),
+    path.resolve(process.cwd(), './cfg', `${logName}.txt`),
     `${content},`,
     (err) => {
       if (err) throw err
@@ -147,8 +147,8 @@ function writeLog(content, logName) {
 
   fs.appendFile(
     path.resolve(
-      __dirname,
-      '../cfg/history',
+      process.cwd(),
+      './cfg/history',
       `${date.format(now, 'YYYY-MM-DD_HH-mm')}_${logName}.txt`
     ),
     `${content},`,
@@ -160,7 +160,7 @@ function writeLog(content, logName) {
 
 function removeAllSetting(fileName) {
   let data = fs
-    .readFileSync(path.resolve(__dirname, '../cfg', fileName), {
+    .readFileSync(path.resolve(process.cwd(), './cfg', fileName), {
       encoding: 'utf8',
     })
     .split(',')
