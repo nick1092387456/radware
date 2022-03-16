@@ -50,6 +50,15 @@ function checkCSVexist() {
   })
 }
 
+function checkRemoveListExist(removeListFileName) {
+  return new Promise((res, rej) => {
+    fs.readdir(path.resolve(process.cwd(), './cfg'), (err, files) => {
+      if (err) rej(err)
+      res(files.includes(removeListFileName))
+    })
+  })
+}
+
 function parseCSV(csvFileName) {
   return new Promise((res, rej) => {
     let URLList = []
@@ -172,6 +181,7 @@ function removeAllSetting(fileName) {
 }
 
 module.exports = {
+  checkRemoveListExist,
   parseCSV,
   buildAttribute,
   buildFilterCommand,

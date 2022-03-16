@@ -7,6 +7,7 @@ require('dotenv').config({
 })
 const {
   checkCSVexist,
+  checkRemoveListExist,
   parseCSV,
   buildFilterCommand,
   buildFeatureCommand,
@@ -40,10 +41,10 @@ if (process.argv.length === 3) {
     `請輸入預更新的設備".\\addURL.js 01" 或 ".\\addURL.js 02"，若沒輸入則為全部更新`
   )
 }
-const cli_Processing_Hinter = new Spinner()
 if (device_1_toggle) {
   conn
     .on('ready', () => {
+      const cli_Processing_Hinter1 = new Spinner()
       console.log(`${deviceList[0]} connected`)
       conn.shell((err, stream) => {
         if (err) throw err
@@ -56,20 +57,25 @@ if (device_1_toggle) {
           })
           .on('close', () => {
             console.log(connectCloseMessage)
-            cli_Processing_Hinter.stop()
+            cli_Processing_Hinter1.stop()
             createLog(consoleMessage, deviceList[0], 'CMDResponse')
             conn.end()
           })
         ;(async () => {
-          cli_Processing_Hinter.spin()
+          cli_Processing_Hinter1.spin()
           try {
             const fileNames = await checkCSVexist()
-            let removeCMD = await removeAllSetting(`${deviceList[0]}.txt`)
             let idCount = 300001
-            //remove last time added url.
-            for (let i = 0, j = removeCMD.length; i < j; i++) {
-              stream.write(`${removeCMD[i]}`)
-              // console.log(removeCMD[i])
+            let removeDeviceListExist = await checkRemoveListExist(
+              `${deviceList[0]}.txt`
+            )
+            if (removeDeviceListExist) {
+              let removeCMD = await removeAllSetting(`${deviceList[0]}.txt`)
+              //remove last time added url.
+              for (let i = 0, j = removeCMD.length; i < j; i++) {
+                stream.write(`${removeCMD[i]}`)
+                // console.log(removeCMD[i])
+              }
             }
 
             //empty previousLog
@@ -105,7 +111,6 @@ if (device_1_toggle) {
                 idCount++
               }
             }
-            // cli_Processing_Hinter.stop()
             connectCloseMessage = `${deviceList[0]} adding success. Connect closed.`
             stream.write('dp update-policies set 1\nlogout\ny\n')
           } catch (err) {
@@ -154,6 +159,7 @@ if (device_1_toggle) {
 if (device_2_toggle) {
   conn2
     .on('ready', () => {
+      const cli_Processing_Hinter2 = new Spinner()
       console.log(`${deviceList[1]} connected`)
       conn2.shell((err, stream) => {
         if (err) throw err
@@ -166,18 +172,25 @@ if (device_2_toggle) {
           })
           .on('close', () => {
             console.log(connectCloseMessage)
+            cli_Processing_Hinter2.stop()
             createLog(consoleMessage, deviceList[1], 'CMDResponse')
             conn2.end()
           })
         ;(async () => {
+          cli_Processing_Hinter2.spin()
           try {
             const fileNames = await checkCSVexist()
-            let removeCMD = await removeAllSetting(`${deviceList[1]}.txt`)
             let idCount = 300001
-            //remove last time added url.
-            for (let i = 0, j = removeCMD.length; i < j; i++) {
-              stream.write(`${removeCMD[i]}`)
-              // console.log(removeCMD[i])
+            let removeDeviceListExist = await checkRemoveListExist(
+              `${deviceList[1]}.txt`
+            )
+            if (removeDeviceListExist) {
+              let removeCMD = await removeAllSetting(`${deviceList[1]}.txt`)
+              //remove last time added url.
+              for (let i = 0, j = removeCMD.length; i < j; i++) {
+                stream.write(`${removeCMD[i]}`)
+                // console.log(removeCMD[i])
+              }
             }
 
             //empty previousLog
