@@ -30,7 +30,7 @@ if (process.argv.length === 3) {
     device_2_toggle = 1
   } else {
     console.log(
-      `輸入錯誤!! 請輸入預更新的設備".\\addURL.js 01" 或 ".\\addURL.js 02"，若沒輸入則為全部更新`
+      `輸入錯誤!! 請輸入預更新的設備".\\addURL.exe 01" 或 ".\\addURL.exe 02"，若沒輸入則為全部更新`
     )
   }
 } else if (process.argv.length === 2) {
@@ -38,7 +38,7 @@ if (process.argv.length === 3) {
   device_2_toggle = 1
 } else {
   console.log(
-    `請輸入預更新的設備".\\addURL.js 01" 或 ".\\addURL.js 02"，若沒輸入則為全部更新`
+    `請輸入預更新的設備".\\addURL.exe 01" 或 ".\\addURL.exe 02"，若沒輸入則為全部更新`
   )
 }
 if (device_1_toggle) {

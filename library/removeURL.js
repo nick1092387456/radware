@@ -1,7 +1,9 @@
 const path = require('path')
 const { Client } = require('ssh2')
 const conn = new Client()
-require('dotenv').config({ path: path.resolve(__dirname, '../', '.env') })
+require('dotenv').config({
+  path: path.resolve(process.cwd(), './config', '.env'),
+})
 const { removeAllSetting } = require('./library')
 
 const sshConfig = [
@@ -89,12 +91,12 @@ if (process.argv.length === 3) {
     configOption = 1
   } else {
     console.log(
-      `輸入錯誤!! 請輸入預刪除黑名單的設備".\\removeURL.js 01" 或 ".\\removeURL.js 02"`
+      `輸入錯誤!! 請輸入預刪除黑名單的設備".\\removeURL.exe 01" 或 ".\\removeURL.exe 02"`
     )
   }
 } else if (process.argv.length === 2) {
   console.log(
-    `請輸入預刪除黑名單的設備".\\removeURL.js 01" 或 ".\\removeURL.js 02"`
+    `請輸入預刪除黑名單的設備".\\removeURL.exe 01" 或 ".\\removeURL.exe 02"`
   )
 }
 
