@@ -11,9 +11,6 @@
     "scripts": [
       "./library/*.js"
     ],
-    "assets": [
-      "./config/*"
-    ],
     "targets": [
       "node16-win-x64"
     ],
