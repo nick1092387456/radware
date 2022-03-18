@@ -6,98 +6,30 @@ require('dotenv').config({
 })
 const { removeAllSetting } = require('./library')
 
-const sshConfig = [
-  {
-    host: process.env.HOST_01,
-    port: 22,
-    username: process.env.LOGIN_AS_01,
-    password: process.env.PRIVATEKEY_01,
-    algorithms: {
-      kex: [
-        'diffie-hellman-group1-sha1',
-        'ecdh-sha2-nistp256',
-        'ecdh-sha2-nistp384',
-        'ecdh-sha2-nistp521',
-        'diffie-hellman-group-exchange-sha256',
-        'diffie-hellman-group14-sha1',
-      ],
-      cipher: [
-        '3des-cbc',
-        'aes128-ctr',
-        'aes192-ctr',
-        'aes256-ctr',
-        'aes128-gcm',
-        'aes128-gcm@openssh.com',
-        'aes256-gcm',
-        'aes256-gcm@openssh.com',
-      ],
-      serverHostKey: [
-        'ssh-rsa',
-        'ecdsa-sha2-nistp256',
-        'ecdsa-sha2-nistp384',
-        'ecdsa-sha2-nistp521',
-      ],
-      hmac: ['hmac-sha2-256', 'hmac-sha2-512', 'hmac-sha1'],
-    },
-  },
-  {
-    host: process.env.HOST_02,
-    port: 22,
-    username: process.env.LOGIN_AS_02,
-    password: process.env.PRIVATEKEY_02,
-    algorithms: {
-      kex: [
-        'diffie-hellman-group1-sha1',
-        'ecdh-sha2-nistp256',
-        'ecdh-sha2-nistp384',
-        'ecdh-sha2-nistp521',
-        'diffie-hellman-group-exchange-sha256',
-        'diffie-hellman-group14-sha1',
-      ],
-      cipher: [
-        '3des-cbc',
-        'aes128-ctr',
-        'aes192-ctr',
-        'aes256-ctr',
-        'aes128-gcm',
-        'aes128-gcm@openssh.com',
-        'aes256-gcm',
-        'aes256-gcm@openssh.com',
-      ],
-      serverHostKey: [
-        'ssh-rsa',
-        'ecdsa-sha2-nistp256',
-        'ecdsa-sha2-nistp384',
-        'ecdsa-sha2-nistp521',
-      ],
-      hmac: ['hmac-sha2-256', 'hmac-sha2-512', 'hmac-sha1'],
-    },
-  },
-]
+const device_amount = process.env.HOST.split(',').length
+const HOST_LIST = process.env.HOST.split(',')
+const USER_LIST = process.env.USER.split(',')
+const KEY_LIST = process.env.PRIVATEKEY.split(',')
+
+// 使用cmdargu的方式指定裝置刪除資料
+//V 1.先使用dotenv抓取env內所有裝置設定
+// 2.解析cmdargu
+// 3.依解析結果抓取裝置設定
+// 4.載入裝置設定
 
 const args = process.argv.slice(2)
-let logFileName = ''
-let configOption = ''
 let executiveSwitch = 0
+let deviceIndex = 0
+let logFileName = ''
 
 if (process.argv.length === 3) {
-  if (args[0] === '01') {
+  if (HOST_LIST.indexOf(args[0]) !== -1) {
     executiveSwitch = 1
-    logFileName = 'device_01.txt'
-    configOption = 0
-  } else if (args[0] === '02') {
-    executiveSwitch = 1
-    logFileName = 'device_02.txt'
-    configOption = 1
-  } else {
-    console.log(
-      `輸入錯誤!! 請輸入預刪除黑名單的設備".\\removeURL.exe 01" 或 ".\\removeURL.exe 02"`
-    )
+    deviceIndex = HOST_LIST.indexOf(args[0])
+    logFileName = `${HOST_LIST[deviceIndex]}.txt`
   }
-} else if (process.argv.length === 2) {
-  console.log(
-    `請輸入預刪除黑名單的設備".\\removeURL.exe 01" 或 ".\\removeURL.exe 02"`
-  )
+} else {
+  console.log(`請輸入預刪除黑名單的設備".\\removeURL.exe [ip]`)
 }
 
 if (executiveSwitch) {
@@ -123,5 +55,37 @@ if (executiveSwitch) {
         })()
       })
     })
-    .connect(sshConfig[configOption])
+    .connect({
+      host: HOST_LIST[deviceIndex],
+      port: 22,
+      username: USER_LIST[deviceIndex],
+      password: KEY_LIST[deviceIndex],
+      algorithms: {
+        kex: [
+          'diffie-hellman-group1-sha1',
+          'ecdh-sha2-nistp256',
+          'ecdh-sha2-nistp384',
+          'ecdh-sha2-nistp521',
+          'diffie-hellman-group-exchange-sha256',
+          'diffie-hellman-group14-sha1',
+        ],
+        cipher: [
+          '3des-cbc',
+          'aes128-ctr',
+          'aes192-ctr',
+          'aes256-ctr',
+          'aes128-gcm',
+          'aes128-gcm@openssh.com',
+          'aes256-gcm',
+          'aes256-gcm@openssh.com',
+        ],
+        serverHostKey: [
+          'ssh-rsa',
+          'ecdsa-sha2-nistp256',
+          'ecdsa-sha2-nistp384',
+          'ecdsa-sha2-nistp521',
+        ],
+        hmac: ['hmac-sha2-256', 'hmac-sha2-512', 'hmac-sha1'],
+      },
+    })
 }
