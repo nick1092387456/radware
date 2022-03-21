@@ -6,6 +6,10 @@ const now = new Date()
 const process = require('process')
 const rdl = require('readline')
 const std = process.stdout
+require('dotenv').config({
+  path: path.resolve(process.cwd(), './config', '.env'),
+})
+const device_list = process.env.HOST.split(',')
 
 //class area
 class Spinner {
@@ -50,12 +54,41 @@ function checkCSVexist() {
   })
 }
 
-function checkRemoveListExist(removeListFileName) {
+function checkRemoveListExist() {
   return new Promise((res, rej) => {
     fs.readdir(path.resolve(process.cwd(), './cfg'), (err, files) => {
       if (err) rej(err)
-      res(files.includes(removeListFileName))
+      let removeFileName = files.filter((file) => {
+        return path.extname(file) == '.txt'
+      })
+      for (let i = 0, j = removeFileName.length; i < j; i++) {
+        removeFileName[i]
+      }
+      removeFileName.forEach((fileName, index) => {
+        return (removeFileName[index] = fileName
+          .split('.')
+          .slice(0, -1)
+          .join('.'))
+      })
+      res(
+        device_list.filter((existDevice) => {
+          return removeFileName.includes(existDevice)
+        })
+      )
     })
+  })
+}
+
+function removeAllSetting(fileName) {
+  let data = fs
+    .readFileSync(path.resolve(process.cwd(), './cfg', fileName), {
+      encoding: 'utf8',
+    })
+    .split(',')
+
+  return data.map((url, index) => {
+    let id = 300001 + index
+    return `dp signatures-protection attacks user del ${id}\n dp signatures-protection filter basic-filters user del ${url}\n`
   })
 }
 
@@ -165,19 +198,6 @@ function writeLog(content, logName) {
       if (err) throw err
     }
   )
-}
-
-function removeAllSetting(fileName) {
-  let data = fs
-    .readFileSync(path.resolve(process.cwd(), './cfg', fileName), {
-      encoding: 'utf8',
-    })
-    .split(',')
-
-  return data.map((url, index) => {
-    let id = 300001 + index
-    return `dp signatures-protection attacks user del ${id}\n dp signatures-protection filter basic-filters user del ${url}\n`
-  })
 }
 
 module.exports = {

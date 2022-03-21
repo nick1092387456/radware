@@ -21,35 +21,15 @@ const HOST_LIST = process.env.HOST.split(',')
 const USER_LIST = process.env.USER.split(',')
 const KEY_LIST = process.env.PRIVATEKEY.split(',')
 
-// let device_1_toggle = 0
-// let device_2_toggle = 0
-// const deviceList = ['device_01', 'device_02']
+let removeDeviceList = []
+;(async () => {
+  removeDeviceList = await checkRemoveListExist()
+})()
 
-// const args = process.argv.slice(2)
-
-// if (process.argv.length === 3) {
-//   if (args[0] === '01') {
-//     device_1_toggle = 1
-//   } else if (args[0] === '02') {
-//     device_2_toggle = 1
-//   } else {
-//     console.log(
-//       `輸入錯誤!! 請輸入預更新的設備".\\addURL.exe 01" 或 ".\\addURL.exe 02"，若沒輸入則為全部更新`
-//     )
-//   }
-// } else if (process.argv.length === 2) {
-//   device_1_toggle = 1
-//   device_2_toggle = 1
-// } else {
-//   console.log(
-//     `請輸入預更新的設備".\\addURL.exe 01" 或 ".\\addURL.exe 02"，若沒輸入則為全部更新`
-//   )
-// }
 
 conn_List = new Array(device_amount)
-
 ;(async () => {
-  for (let i = 0; i < device_amount; i++) {
+  for (let i = device_amount - 1; i >= 0; i--) {
     conn_List[i] = new Client()
     await connectLoop(i)
   }
@@ -84,23 +64,23 @@ function connectLoop(index) {
             try {
               const fileNames = await checkCSVexist()
               let idCount = 300001
-              let removeDeviceListExist = await checkRemoveListExist(
-                `${device_list[index]}.txt`
-              )
-              if (removeDeviceListExist) {
-                let removeCMD = await removeAllSetting(
-                  `${device_list[index]}.txt`
-                )
+              let removeCMD = []
+              if (removeDeviceList.length) {
+                for (let i = 0, j = removeDeviceList.length; i < j; i++) {
+                  removeCMD = await removeAllSetting(
+                    `${removeDeviceList[i]}.txt`
+                  )
+                }
                 //remove last time added url.
-                for (let i = 0, j = removeCMD.length; i < j; i++) {
+                for (let i = removeCMD.length - 1; i >= 0; i--) {
                   stream.write(`${removeCMD[i]}`)
+                  removeDeviceList.pop()
                   // console.log(removeCMD[i])
                 }
+                //empty previousLog
+                createLog('', device_list[index], 'previousLog')
+                createLog('', device_list[index], 'dailyLog')
               }
-
-              //empty previousLog
-              createLog('', device_list[index], 'previousLog')
-              createLog('', device_list[index], 'dailyLog')
 
               for (let x = 0, y = fileNames.length; x < y; x++) {
                 let filterCMD = []
