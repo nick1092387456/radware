@@ -128,11 +128,18 @@ function buildFilterCommand(url, device, fileName) {
   return url.map((_url) => {
     let filterName = filterNameTitle + _url
     writeLog(filterName, device)
-    let urlParse = _url
-      .split('.')
-      .map((str) => (str = '\\\\x0' + str.length + str))
-      .join('')
-    return `dp signatures-protection filter basic-filters user setCreate ${filterName} -p Udp -o 2 -om f8400000 -oc Equal -ol "Two Bytes" -c ${urlParse} -ct Text -ce "Case Insensitive" -rt "L4 Data" -dp dns`
+    let urlParse = ''
+    _url.split('.').some((_str) => _str.length >= 10)
+      ? (urlParse = _url)
+      : (urlParse = _url
+          .split('.')
+          .map((str) => {
+            return (str = '\\\\x0' + str.length + str)
+          })
+          .join(''))
+
+    let contentMaxSearchLength = urlParse.length
+    return `dp signatures-protection filter basic-filters user setCreate ${filterName} -p udp -o 2 -om f8400000 -oc Equal -ol "Two Bytes" -co 12 -c ${urlParse} -ct Text -cm ${contentMaxSearchLength} -ce "Case Insensitive" -rt "L4 Data" -dp dns -cr Yes`
   })
 }
 
