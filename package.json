@@ -2,7 +2,7 @@
   "name": "radware",
   "version": "1.0.0",
   "description": "",
-  "bin": "./library/addURL.js",
+  "bin": "./library/appendURL.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "pkg ."

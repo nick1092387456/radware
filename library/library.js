@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const { Client } = require('ssh2')
 const csv = require('fast-csv')
 const date = require('date-and-time')
 const now = new Date()
@@ -36,7 +37,17 @@ class Spinner {
 }
 
 //function area
-function checkCSVexist() {
+function createConn(functionTodo, device_amount) {
+  conn_List = new Array(device_amount)
+  ;(async () => {
+    for (let i = device_amount - 1; i >= 0; i--) {
+      conn_List[i] = new Client()
+      await functionTodo(i)
+    }
+  })()
+}
+
+function getCSVFile() {
   return new Promise((res, rej) => {
     fs.readdir(path.resolve(process.cwd(), './public'), (err, files) => {
       if (
@@ -61,9 +72,6 @@ function checkRemoveListExist() {
       let removeFileName = files.filter((file) => {
         return path.extname(file) == '.txt'
       })
-      for (let i = 0, j = removeFileName.length; i < j; i++) {
-        removeFileName[i]
-      }
       removeFileName.forEach((fileName, index) => {
         return (removeFileName[index] = fileName
           .split('.')
@@ -73,6 +81,28 @@ function checkRemoveListExist() {
       res(
         device_list.filter((existDevice) => {
           return removeFileName.includes(existDevice)
+        })
+      )
+    })
+  })
+}
+
+function getSameDevice() {
+  return new Promise((res, rej) => {
+    fs.readdir(path.resolve(process.cwd(), './cfg'), (err, files) => {
+      if (err) rej(err)
+      let previousFileNameList = files.filter((file) => {
+        return path.extname(file) == '.txt'
+      })
+      previousFileNameList.forEach((fileName, index) => {
+        return (previousFileNameList[index] = fileName
+          .split('.')
+          .slice(0, -1)
+          .join('.'))
+      })
+      res(
+        device_list.filter((existDevice) => {
+          return previousFileNameList.includes(existDevice)
         })
       )
     })
@@ -123,11 +153,13 @@ function buildFilterCommand(url, device, fileName) {
     filterNameTitle = 'H_'
   } else if (fileName === 'GSN清單.csv') {
     filterNameTitle = 'G_'
+  } else if (fileName === 'Append') {
+    filterNameTitle = 'A_'
   }
 
   return url.map((_url) => {
     let filterName = filterNameTitle + _url
-    writeLog(filterName, device)
+    appendDomain(filterName, device)
     let urlParse = ''
     _url.split('.').some((_str) => _str.length >= 10)
       ? (urlParse = _url)
@@ -138,7 +170,7 @@ function buildFilterCommand(url, device, fileName) {
           })
           .join(''))
 
-    let contentMaxSearchLength = urlParse.length
+    let contentMaxSearchLength = urlParse.length + 12
     return `dp signatures-protection filter basic-filters user setCreate ${filterName} -p udp -o 2 -om f8400000 -oc Equal -ol "Two Bytes" -co 12 -c ${urlParse} -ct Text -cm ${contentMaxSearchLength} -ce "Case Insensitive" -rt "L4 Data" -dp dns -cr Yes`
   })
 }
@@ -149,7 +181,10 @@ function buildFeatureCommand(url, fileName, idCount) {
     filterNameTitle = 'H_'
   } else if (fileName === 'GSN清單.csv') {
     filterNameTitle = 'G_'
+  } else if (fileName === 'Append') {
+    filterNameTitle = 'A_'
   }
+
   return `dp signatures-protection attacks user setCreate ${idCount} -n ${filterNameTitle}${url} -f ${filterNameTitle}${url} -dr "In Bound" -tt 25`
 }
 
@@ -157,7 +192,7 @@ function packCommand(id) {
   return `hidden attacks attributes create ${id} type_1 attribute_10001 -ti 1 -va 10001`
 }
 
-function createLog(content = 'empty', device, type) {
+function createLog(content, device, type) {
   let location = ''
   let fileName = ''
   if (type === 'dailyLog') {
@@ -185,7 +220,32 @@ function createLog(content = 'empty', device, type) {
   )
 }
 
-function writeLog(content, logName) {
+function appendLog(content, device, type) {
+  let location = ''
+  let fileName = ''
+  if (type === 'dailyLog') {
+    location = './cfg/history'
+    fileName = `${date.format(now, 'YYYY-MM-DD_HH-mm')}_${device}.txt`
+  } else if (type === 'previousLog') {
+    location = './cfg'
+    fileName = `${device}.txt`
+  } else if (type === 'CMDResponse') {
+    location = './cfg/Log'
+    fileName = `${date.format(now, 'YYYY-MM-DD')}_${device}.log`
+  } else {
+    location = './cfg/Error'
+    fileName = `${date.format(now, 'YYYY-MM-DD')}_error.log`
+  }
+  fs.appendFile(
+    path.resolve(process.cwd(), location, fileName),
+    content,
+    (err) => {
+      if (err) throw err
+    }
+  )
+}
+
+function appendDomain(content, logName) {
   fs.appendFile(
     path.resolve(process.cwd(), './cfg', `${logName}.txt`),
     `${content},`,
@@ -207,16 +267,27 @@ function writeLog(content, logName) {
   )
 }
 
+function parseIdNumber(parseFile) {
+  return fs
+    .readFileSync(path.resolve(process.cwd(), './cfg', `${parseFile}.txt`), {
+      encoding: 'utf8',
+    })
+    .split(',').length
+}
+
 module.exports = {
+  parseIdNumber,
+  createConn,
   checkRemoveListExist,
+  getSameDevice,
   parseCSV,
   buildAttribute,
   buildFilterCommand,
   buildFeatureCommand,
   packCommand,
   createLog,
-  writeLog,
+  appendLog,
   removeAllSetting,
-  checkCSVexist,
+  getCSVFile,
   Spinner,
 }

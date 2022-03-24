@@ -1,10 +1,10 @@
 const path = require('path')
-const { Client } = require('ssh2')
 require('dotenv').config({
   path: path.resolve(process.cwd(), './config', '.env'),
 })
 const {
-  checkCSVexist,
+  createConn,
+  getCSVFile,
   checkRemoveListExist,
   parseCSV,
   buildFilterCommand,
@@ -14,7 +14,6 @@ const {
   createLog,
   Spinner,
 } = require('./library')
-
 const device_amount = process.env.HOST.split(',').length
 const device_list = process.env.HOST.split(',')
 const HOST_LIST = process.env.HOST.split(',')
@@ -26,14 +25,7 @@ let removeDeviceList = []
   removeDeviceList = await checkRemoveListExist()
 })()
 
-
-conn_List = new Array(device_amount)
-;(async () => {
-  for (let i = device_amount - 1; i >= 0; i--) {
-    conn_List[i] = new Client()
-    await connectLoop(i)
-  }
-})()
+createConn(connectLoop, device_amount)
 
 function connectLoop(index) {
   return new Promise((res) => {
@@ -51,7 +43,6 @@ function connectLoop(index) {
           stream
             .on('data', (data) => {
               consoleMessage += data.toString()
-              // console.log(data.toString())
             })
             .on('close', () => {
               console.log(connectCloseMessage)
@@ -59,10 +50,11 @@ function connectLoop(index) {
               createLog(consoleMessage, device_list[index], 'CMDResponse')
               conn_List[index].end(res())
             })
+          //function start here
           ;(async () => {
             cli_Processing_Hinter1.spin()
             try {
-              const fileNames = await checkCSVexist()
+              const fileNames = await getCSVFile()
               let idCount = 300001
               let removeCMD = []
               if (removeDeviceList.length) {
@@ -75,7 +67,6 @@ function connectLoop(index) {
                 for (let i = removeCMD.length - 1; i >= 0; i--) {
                   stream.write(`${removeCMD[i]}`)
                   removeDeviceList.pop()
-                  // console.log(removeCMD[i])
                 }
                 //empty previousLog
                 createLog('', device_list[index], 'previousLog')
@@ -96,7 +87,6 @@ function connectLoop(index) {
 
                 for (let i = 0, j = filterCMD.length; i < j; i++) {
                   stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n`)
-                  // console.log(filterCMD[i])
                 }
 
                 for (let i = 0, j = URLList.length; i < j; i++) {
@@ -107,7 +97,6 @@ function connectLoop(index) {
                   )
                   stream.write(`${featureCMD}\n\n\n\n`)
                   stream.write(`${packCommand(idCount)}\n`)
-                  // console.log(featureCMD)
                   idCount++
                 }
               }
