@@ -4,7 +4,12 @@ const conn = new Client()
 require('dotenv').config({
   path: path.resolve(process.cwd(), './config', '.env'),
 })
-const { removeAllSetting, createConn } = require('./library')
+const {
+  removeAllSetting,
+  createConn,
+  getSameDevice,
+  Spinner,
+} = require('./library')
 
 const device_amount = process.env.HOST.split(',').length
 const HOST_LIST = process.env.HOST.split(',')
@@ -17,38 +22,38 @@ const KEY_LIST = process.env.PRIVATEKEY.split(',')
 // 3.依解析結果抓取裝置設定
 // 4.載入裝置設定
 
-const args = process.argv.slice(2)
-let executiveSwitch = 0
-let deviceIndex = 0
-let logFileName = ''
+let device_list = []
 
-if (process.argv.length === 3) {
-  if (HOST_LIST.indexOf(args[0]) !== -1) {
-    executiveSwitch = 1
-    deviceIndex = HOST_LIST.indexOf(args[0])
-    logFileName = `${HOST_LIST[deviceIndex]}.txt`
+;(async () => {
+  device_list = await getSameDevice()
+  let device_amount = device_list.length
+  if (device_list.length) {
+    createConn(removeURL, device_amount)
   }
-} else {
-  console.log(`請輸入預刪除黑名單的設備".\\removeURL.exe [ip]`)
-}
+})()
 
-function removeURL() {
-  if (executiveSwitch) {
-    conn
+function removeURL(index) {
+  return new Promise((res) => {
+    let sameEnvIndex = process.env.HOST.split(',').indexOf(device_list[index])
+    let sameEnvHOST = process.env.HOST.split(',')[sameEnvIndex]
+    let sameEnvUser = process.env.USER.split(',')[sameEnvIndex]
+    let sameEnvKEY = process.env.PRIVATEKEY.split(',')[sameEnvIndex]
+    conn_List[index]
       .on('ready', () => {
-        console.log('Client :: ready')
-        conn.shell((err, stream) => {
+        const cli_Processing_Hinter1 = new Spinner()
+        conn_List[index].shell((err, stream) => {
           if (err) throw err
           stream
-            .on('data', (data) => {
-              // console.log(data.toString())
-            })
+            .on('data', (data) => {})
             .on('close', () => {
-              console.log('Stream :: close')
-              conn.end()
+              cli_Processing_Hinter1.stop()
+              console.log(`${device_list[index]} delete completed connection close.`)
+              conn_List[index].end(res())
             })
           ;(async () => {
-            let removeCMD = await removeAllSetting(logFileName)
+            cli_Processing_Hinter1.spin()
+            let removeCMD = await removeAllSetting(`${device_list[index]}.txt`)
+            console.log(`${device_list[index]} connected`)
             for (let i = 0, j = removeCMD.length; i < j; i++) {
               stream.write(`${removeCMD[i]}`)
             }
@@ -57,10 +62,10 @@ function removeURL() {
         })
       })
       .connect({
-        host: HOST_LIST[deviceIndex],
+        host: sameEnvHOST,
         port: 22,
-        username: USER_LIST[deviceIndex],
-        password: KEY_LIST[deviceIndex],
+        username: sameEnvUser,
+        password: sameEnvKEY,
         algorithms: {
           kex: [
             'diffie-hellman-group1-sha1',
@@ -89,5 +94,5 @@ function removeURL() {
           hmac: ['hmac-sha2-256', 'hmac-sha2-512', 'hmac-sha1'],
         },
       })
-  }
+  })
 }
