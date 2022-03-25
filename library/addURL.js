@@ -10,7 +10,8 @@ const {
   buildFilterCommand,
   buildFeatureCommand,
   packCommand,
-  removeAllSetting,
+  genDeleteFeature,
+  genDeleteFilter,
   createLog,
   Spinner,
 } = require('./library')
@@ -56,18 +57,26 @@ function connectLoop(index) {
             try {
               const fileNames = await getCSVFile()
               let idCount = 300001
-              let removeCMD = []
+              let delFeature = []
+              let delFilter = []
               if (removeDeviceList.length) {
                 for (let i = 0, j = removeDeviceList.length; i < j; i++) {
-                  removeCMD = await removeAllSetting(
+                  delFeature = await genDeleteFeature(
+                    `${removeDeviceList[i]}.txt`
+                  )
+                  delFilter = await genDeleteFilter(
                     `${removeDeviceList[i]}.txt`
                   )
                 }
                 //remove last time added url.
-                for (let i = removeCMD.length - 1; i >= 0; i--) {
-                  stream.write(`${removeCMD[i]}`)
+                for (let i = delFeature.length - 1; i >= 0; i--) {
+                  stream.write(`${delFeature[i]}`)
                   removeDeviceList.pop()
                 }
+                for (let i = delFilter.length - 1; i >= 0; i--) {
+                  stream.write(`${delFilter[i]}`)
+                }
+
                 //empty previousLog
                 createLog('', device_list[index], 'previousLog')
                 createLog('', device_list[index], 'dailyLog')
@@ -81,8 +90,7 @@ function connectLoop(index) {
                 //buildFilterCommand
                 filterCMD = await buildFilterCommand(
                   URLList,
-                  device_list[index],
-                  fileNames[x]
+                  device_list[index]
                 )
 
                 for (let i = 0, j = filterCMD.length; i < j; i++) {

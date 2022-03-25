@@ -109,16 +109,28 @@ function getSameDevice() {
   })
 }
 
-function removeAllSetting(fileName) {
+function genDeleteFeature(fileName) {
   let data = fs
     .readFileSync(path.resolve(process.cwd(), './cfg', fileName), {
       encoding: 'utf8',
     })
     .split(',')
 
-  return data.map((url, index) => {
+  return data.map((_url, index) => {
     let id = 300001 + index
-    return `dp signatures-protection attacks user del ${id}\n dp signatures-protection filter basic-filters user del ${url}\n`
+    return `dp signatures-protection attacks user del ${id}\n`
+  })
+}
+
+function genDeleteFilter(fileName) {
+  let data = fs
+    .readFileSync(path.resolve(process.cwd(), './cfg', fileName), {
+      encoding: 'utf8',
+    })
+    .split(',')
+
+  return data.map((url) => {
+    return `dp signatures-protection filter basic-filters user del ${url}\n`
   })
 }
 
@@ -146,19 +158,10 @@ function buildAttribute() {
   return `hidden attributes values create type_1 User -ti 1 -va 10001`
 }
 
-function buildFilterCommand(url, device, fileName) {
-  let filterNameTitle = ''
-
-  if (fileName === 'Hinet清單.csv') {
-    filterNameTitle = 'H_'
-  } else if (fileName === 'GSN清單.csv') {
-    filterNameTitle = 'G_'
-  } else if (fileName === 'Append') {
-    filterNameTitle = 'A_'
-  }
-
+function buildFilterCommand(url, device) {
   return url.map((_url) => {
-    let filterName = filterNameTitle + _url
+    let filterName = 'F_' + _url
+    if (filterName.length >= 29) filterName = filterName.slice(0, 29)
     appendDomain(filterName, device)
     let urlParse = ''
     _url.split('.').some((_str) => _str.length >= 10)
@@ -176,16 +179,20 @@ function buildFilterCommand(url, device, fileName) {
 }
 
 function buildFeatureCommand(url, fileName, idCount) {
-  let filterNameTitle = ''
+  let featureNameTitle = ''
   if (fileName === 'Hinet清單.csv') {
-    filterNameTitle = 'H_'
+    featureNameTitle = 'H_'
   } else if (fileName === 'GSN清單.csv') {
-    filterNameTitle = 'G_'
+    featureNameTitle = 'G_'
   } else if (fileName === 'Append') {
-    filterNameTitle = 'A_'
+    featureNameTitle = 'A_'
   }
+  let featureName = featureNameTitle + url
+  if (featureName.length >= 29) featureName = featureName.slice(0, 29)
+  let filterName = 'F_' + url
+  if (filterName.length >= 29) filterName = filterName.slice(0, 29)
 
-  return `dp signatures-protection attacks user setCreate ${idCount} -n ${filterNameTitle}${url} -f ${filterNameTitle}${url} -dr "In Bound" -tt 25`
+  return `dp signatures-protection attacks user setCreate ${idCount} -n ${featureName} -f ${filterName} -dr "In Bound" -tt 25`
 }
 
 function packCommand(id) {
@@ -287,7 +294,8 @@ module.exports = {
   packCommand,
   createLog,
   appendLog,
-  removeAllSetting,
+  genDeleteFeature,
+  genDeleteFilter,
   getCSVFile,
   Spinner,
 }

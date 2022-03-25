@@ -5,16 +5,13 @@ require('dotenv').config({
   path: path.resolve(process.cwd(), './config', '.env'),
 })
 const {
-  removeAllSetting,
+  genDeleteFeature,
+  genDeleteFilter,
   createConn,
   getSameDevice,
+  createLog,
   Spinner,
 } = require('./library')
-
-const device_amount = process.env.HOST.split(',').length
-const HOST_LIST = process.env.HOST.split(',')
-const USER_LIST = process.env.USER.split(',')
-const KEY_LIST = process.env.PRIVATEKEY.split(',')
 
 // 使用cmdargu的方式指定裝置刪除資料
 //V 1.先使用dotenv抓取env內所有裝置設定
@@ -43,19 +40,29 @@ function removeURL(index) {
         const cli_Processing_Hinter1 = new Spinner()
         conn_List[index].shell((err, stream) => {
           if (err) throw err
+          let consoleMessage = ''
           stream
-            .on('data', (data) => {})
+            .on('data', (data) => {
+              consoleMessage += data.toString()
+            })
             .on('close', () => {
               cli_Processing_Hinter1.stop()
-              console.log(`${device_list[index]} delete completed connection close.`)
+              createLog(consoleMessage, device_list[index], 'CMDResponse')
+              console.log(
+                `${device_list[index]} delete completed connection close.`
+              )
               conn_List[index].end(res())
             })
           ;(async () => {
             cli_Processing_Hinter1.spin()
-            let removeCMD = await removeAllSetting(`${device_list[index]}.txt`)
             console.log(`${device_list[index]} connected`)
-            for (let i = 0, j = removeCMD.length; i < j; i++) {
-              stream.write(`${removeCMD[i]}`)
+            let delFeature = await genDeleteFeature(`${device_list[index]}.txt`)
+            let delFilter = await genDeleteFilter(`${device_list[index]}.txt`)
+            for (let i = 0, j = delFeature.length; i < j; i++) {
+              stream.write(`${delFeature[i]}`)
+            }
+            for (let i = 0, j = delFilter.length; i < j; i++) {
+              stream.write(`${delFilter[i]}`)
             }
             stream.write('dp update-policies set 1\nlogout\ny\n')
           })()
