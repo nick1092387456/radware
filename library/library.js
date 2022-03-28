@@ -72,12 +72,9 @@ function checkRemoveListExist() {
       let removeFileName = files.filter((file) => {
         return path.extname(file) == '.txt'
       })
-      removeFileName.forEach((fileName, index) => {
-        return (removeFileName[index] = fileName
-          .split('.')
-          .slice(0, -1)
-          .join('.'))
-      })
+      for (let i = 0, j = removeFileName.length; i < j; i++) {
+        removeFileName[i] = removeFileName[i].split('.').slice(0, -1).join('.')
+      }
       res(
         device_list.filter((existDevice) => {
           return removeFileName.includes(existDevice)
@@ -130,6 +127,7 @@ function genDeleteFilter(fileName) {
     .split(',')
 
   return data.map((url) => {
+    if (url.length >= 29) url = url.slice(0, 29)
     return `dp signatures-protection filter basic-filters user del ${url}\n`
   })
 }
@@ -161,17 +159,18 @@ function buildAttribute() {
 function buildFilterCommand(url, device) {
   return url.map((_url) => {
     let filterName = 'F_' + _url
+    appendDomainLog(filterName, device)
     if (filterName.length >= 29) filterName = filterName.slice(0, 29)
-    appendDomain(filterName, device)
     let urlParse = ''
-    _url.split('.').some((_str) => _str.length >= 10)
-      ? (urlParse = _url)
-      : (urlParse = _url
-          .split('.')
-          .map((str) => {
-            return (str = '\\\\x0' + str.length + str)
-          })
-          .join(''))
+    // _url.split('.').some((_str) => _str.length >= 10)
+    //   ? (urlParse = _url)
+    //   : (urlParse = _url
+    urlParse = _url
+      .split('.')
+      .map((str) => {
+        return '\\\\x' + str.length.toString(16).padStart(2, '0') + str
+      })
+      .join('')
 
     let contentMaxSearchLength = urlParse.length + 12
     return `dp signatures-protection filter basic-filters user setCreate ${filterName} -p udp -o 2 -om f8400000 -oc Equal -ol "Two Bytes" -co 12 -c ${urlParse} -ct Text -cm ${contentMaxSearchLength} -ce "Case Insensitive" -rt "L4 Data" -dp dns -cr Yes`
@@ -252,7 +251,7 @@ function appendLog(content, device, type) {
   )
 }
 
-function appendDomain(content, logName) {
+function appendDomainLog(content, logName) {
   fs.appendFile(
     path.resolve(process.cwd(), './cfg', `${logName}.txt`),
     `${content},`,
