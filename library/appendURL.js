@@ -1,3 +1,9 @@
+const readline = require('readline')
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+})
+const prompt = (query) => new Promise((resolve) => rl.question(query, resolve))
 const path = require('path')
 require('dotenv').config({
   path: path.resolve(process.cwd(), './config', '.env'),
@@ -49,16 +55,26 @@ function appendURL(index) {
               cli_Processing_Hinter1.stop()
               appendLog(consoleMessage, device_list[index], 'CMDResponse')
               conn_List[index].end(res())
+              console.log('按任意按鍵關閉...')
+              process.stdin.once('data', function () {
+                process.exit()
+              })
             })
           ;(async () => {
-            cli_Processing_Hinter1.spin()
             try {
               //getIDCount
               let idCount = 300001 + parseIdNumber(device_list[index]) - 1
               let filterCMD = []
               let URLList = []
               //parse argv
-              URLList = process.argv.slice(2)[0].split(',')
+              if (process.argv.slice(2)[0])
+                URLList = process.argv.slice(2)[0].split(',')
+              else {
+                URLList = (
+                  await prompt('請輸入Domain並以逗號區分每項:\n')
+                ).split(',')
+              }
+              cli_Processing_Hinter1.spin()
               //buildFilterCommand
               filterCMD = await buildFilterCommand(
                 URLList,

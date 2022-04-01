@@ -52,6 +52,10 @@ function removeURL(index) {
                 `${device_list[index]} delete completed connection close.`
               )
               conn_List[index].end(res())
+              console.log('按任意按鍵關閉...')
+              process.stdin.once('data', function () {
+                process.exit()
+              })
             })
           ;(async () => {
             cli_Processing_Hinter1.spin()

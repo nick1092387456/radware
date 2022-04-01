@@ -51,6 +51,10 @@ function connectLoop(index) {
             console.timeEnd(`${device_list[index]} process`)
             createLog(consoleMessage, device_list[index], 'CMDResponse')
             conn_List[index].end()
+            console.log('按任意按鍵關閉...')
+            process.stdin.once('data', function () {
+              process.exit()
+            })
           })
         //function start here
         ;(async () => {
