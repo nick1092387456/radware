@@ -20,11 +20,10 @@ const device_list = process.env.HOST.split(",")
 const HOST_LIST = process.env.HOST.split(",")
 const USER_LIST = process.env.USER.split(",")
 const KEY_LIST = process.env.PRIVATEKEY.split(",")
-console.log("device_list: ", device_list)
 
 let removeDeviceList = []
 ;(async () => {
-  removeDeviceList = await checkRemoveListExist()
+  removeDeviceList = await checkRemoveListExist(device_list)
   await createConn(addURL, deviceAmount)
 })()
 
@@ -62,29 +61,24 @@ async function addURL(index, connList) {
           console.time(`${device} process`)
           const fileNames = await getCSVFile()
           let idCount = 300001
-          let delFeature = []
-          let delFilter = []
-          // if (removeDeviceList.length) {
-          //   for (let i = 0, j = removeDeviceList.length; i < j; i++) {
-          //     delFeature = genDeleteFeature(`${removeDeviceList[i]}.txt`)
-          //     delFilter = genDeleteFilter(`${removeDeviceList[i]}.txt`)
-          //   }
-          //   for (let i = delFeature.length - 1; i >= 0; i--) {
-          //     stream.write(`${delFeature[i]}`)
-          //   }
-          //   for (let i = delFilter.length - 1; i >= 0; i--) {
-          //     stream.write(`${delFilter[i]}`)
-          //   }
-          //   await createLog("", device, "previousLog")
-          //   await createLog("", device, "dailyLog")
-          //   removeDeviceList.pop()
-          // }
+          //刪除之前的設定
+          if (removeDeviceList.length) {
+            let delFeature = []
+            let delFilter = []
+            delFeature = genDeleteFeature(`${removeDeviceList[index]}.txt`)
+            delFilter = genDeleteFilter(`${removeDeviceList[index]}.txt`)
+            for (let i = delFeature.length - 1; i >= 0; i--) {
+              stream.write(`${delFeature[i]}`)
+            }
+            for (let i = delFilter.length - 1; i >= 0; i--) {
+              stream.write(`${delFilter[i]}`)
+            }
+          }
           for (let x = 0, y = fileNames.length; x < y; x++) {
             let filterCMD = []
             let URLList = []
             URLList = URLList.concat(await parseCSV(fileNames[x]))
             filterCMD = buildFilterCommand(URLList, device)
-            console.log("filterCMD: ", filterCMD)
 
             for (let i = 0, j = filterCMD.length; i < j; i++) {
               stream.write(`${filterCMD[i]}\n\n\n\n\n\n\n\n\n`)
@@ -95,7 +89,6 @@ async function addURL(index, connList) {
                 fileNames[x],
                 idCount
               )
-              console.log("featureCMD: ", featureCMD)
               stream.write(`${featureCMD}\n\n\n\n`)
               stream.write(`${packCommand(idCount)}\n`)
               idCount++

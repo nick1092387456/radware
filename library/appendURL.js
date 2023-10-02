@@ -1,12 +1,12 @@
-const readline = require('readline')
+const readline = require("readline")
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 })
 const prompt = (query) => new Promise((resolve) => rl.question(query, resolve))
-const path = require('path')
-require('dotenv').config({
-  path: path.resolve(process.cwd(), './config', '.env'),
+const path = require("path")
+require("dotenv").config({
+  path: path.resolve(process.cwd(), "./config", ".env"),
 })
 const {
   parseIdNumber,
@@ -17,69 +17,70 @@ const {
   buildFeatureCommand,
   packCommand,
   Spinner,
-} = require('./library')
+} = require("./library")
+const device_list = process.env.HOST.split(",")
 
-let device_list = []
+let deviceList = []
 
 ;(async () => {
-  device_list = await getSameDevice()
-  let device_amount = device_list.length
-  if (device_list.length) {
+  deviceList = await getSameDevice(device_list)
+  let device_amount = deviceList.length
+  if (deviceList.length) {
     createConn(appendURL, device_amount)
   }
 })()
 
 function appendURL(index) {
-  let sameEnvIndex = process.env.HOST.split(',').indexOf(device_list[index])
-  let sameEnvHOST = process.env.HOST.split(',')[sameEnvIndex]
-  let sameEnvUser = process.env.USER.split(',')[sameEnvIndex]
-  let sameEnvKEY = process.env.PRIVATEKEY.split(',')[sameEnvIndex]
+  let sameEnvIndex = process.env.HOST.split(",").indexOf(deviceList[index])
+  let sameEnvHOST = process.env.HOST.split(",")[sameEnvIndex]
+  let sameEnvUser = process.env.USER.split(",")[sameEnvIndex]
+  let sameEnvKEY = process.env.PRIVATEKEY.split(",")[sameEnvIndex]
   return new Promise((res) => {
     conn_List[index]
-      .on('ready', () => {
+      .on("ready", () => {
         const cli_Processing_Hinter1 = new Spinner()
-        console.log(`${device_list[index]} connected`)
+        console.log(`${deviceList[index]} connected`)
         conn_List[index].shell((err, stream) => {
           if (err) {
             console.log(err)
             conn_List[index].end()
           }
-          let consoleMessage = ''
-          let connectCloseMessage = ''
+          let consoleMessage = ""
+          let connectCloseMessage = ""
           stream
-            .on('data', (data) => {
+            .on("data", (data) => {
               consoleMessage += data.toString()
             })
-            .on('close', () => {
+            .on("close", () => {
               console.log(connectCloseMessage)
               cli_Processing_Hinter1.stop()
-              appendLog(consoleMessage, device_list[index], 'CMDResponse')
+              appendLog(consoleMessage, deviceList[index], "CMDResponse")
               conn_List[index].end(res())
-              console.log('按任意按鍵關閉...')
-              process.stdin.once('data', function () {
+              console.log("按任意按鍵關閉...")
+              process.stdin.once("data", function () {
                 process.exit()
               })
             })
           ;(async () => {
             try {
               //getIDCount
-              let idCount = 300001 + parseIdNumber(device_list[index]) - 1
+              let idCount = 300001 + parseIdNumber(deviceList[index]) - 1
               let filterCMD = []
               let URLList = []
               //parse argv
               if (process.argv.slice(2)[0])
-                URLList = process.argv.slice(2)[0].split(',')
+                URLList = process.argv.slice(2)[0].split(",")
               else {
                 URLList = (
-                  await prompt('請輸入Domain並以逗號區分每項:\n')
-                ).split(',')
+                  await prompt("請輸入Domain並以逗號區分每項:\n")
+                ).split(",")
               }
               cli_Processing_Hinter1.spin()
               //buildFilterCommand
               filterCMD = await buildFilterCommand(
                 URLList,
-                device_list[index],
-                'Append'
+                deviceList[index],
+                "Append"
               )
 
               for (let i = 0, j = filterCMD.length; i < j; i++) {
@@ -89,7 +90,7 @@ function appendURL(index) {
               for (let i = 0, j = URLList.length; i < j; i++) {
                 let featureCMD = await buildFeatureCommand(
                   URLList[i],
-                  'Append',
+                  "Append",
                   idCount
                 )
                 stream.write(`${featureCMD}\n\n\n\n`)
@@ -97,12 +98,12 @@ function appendURL(index) {
                 idCount++
               }
 
-              connectCloseMessage = `${device_list[index]} adding success. Connect closed.`
-              stream.write('dp update-policies set 1\nlogout\ny\n')
+              connectCloseMessage = `${deviceList[index]} adding success. Connect closed.`
+              stream.write("dp update-policies set 1\nlogout\ny\n")
             } catch (err) {
               console.log(err)
-              connectCloseMessage = `${device_list[index]} Connect closed.`
-              stream.write('logout\ny\n')
+              connectCloseMessage = `${deviceList[index]} Connect closed.`
+              stream.write("logout\ny\n")
             }
           })()
         })
@@ -114,30 +115,30 @@ function appendURL(index) {
         password: sameEnvKEY,
         algorithms: {
           kex: [
-            'diffie-hellman-group1-sha1',
-            'ecdh-sha2-nistp256',
-            'ecdh-sha2-nistp384',
-            'ecdh-sha2-nistp521',
-            'diffie-hellman-group-exchange-sha256',
-            'diffie-hellman-group14-sha1',
+            "diffie-hellman-group1-sha1",
+            "ecdh-sha2-nistp256",
+            "ecdh-sha2-nistp384",
+            "ecdh-sha2-nistp521",
+            "diffie-hellman-group-exchange-sha256",
+            "diffie-hellman-group14-sha1",
           ],
           cipher: [
-            '3des-cbc',
-            'aes128-ctr',
-            'aes192-ctr',
-            'aes256-ctr',
-            'aes128-gcm',
-            'aes128-gcm@openssh.com',
-            'aes256-gcm',
-            'aes256-gcm@openssh.com',
+            "3des-cbc",
+            "aes128-ctr",
+            "aes192-ctr",
+            "aes256-ctr",
+            "aes128-gcm",
+            "aes128-gcm@openssh.com",
+            "aes256-gcm",
+            "aes256-gcm@openssh.com",
           ],
           serverHostKey: [
-            'ssh-rsa',
-            'ecdsa-sha2-nistp256',
-            'ecdsa-sha2-nistp384',
-            'ecdsa-sha2-nistp521',
+            "ssh-rsa",
+            "ecdsa-sha2-nistp256",
+            "ecdsa-sha2-nistp384",
+            "ecdsa-sha2-nistp521",
           ],
-          hmac: ['hmac-sha2-256', 'hmac-sha2-512', 'hmac-sha1'],
+          hmac: ["hmac-sha2-256", "hmac-sha2-512", "hmac-sha1"],
         },
       })
   })

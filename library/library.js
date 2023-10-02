@@ -11,7 +11,6 @@ const std = process.stdout
 require("dotenv").config({
   path: path.resolve(process.cwd(), "./config", ".env"),
 })
-const device_list = process.env.HOST.split(",")
 
 //class area
 class Spinner {
@@ -63,7 +62,7 @@ async function getCSVFile() {
   return targetFiles.map((file) => path.join(dir, file))
 }
 
-async function checkRemoveListExist() {
+async function checkRemoveListExist(device_list) {
   const files = await fs.promises.readdir(path.resolve(process.cwd(), "./cfg"))
   const removeFileName = files
     .filter((file) => path.extname(file) === ".txt")
@@ -74,7 +73,7 @@ async function checkRemoveListExist() {
   )
 }
 
-async function getSameDevice() {
+async function getSameDevice(device_list) {
   try {
     const files = await fs.promises.readdir(
       path.resolve(process.cwd(), "./cfg")

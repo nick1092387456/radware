@@ -1,6 +1,4 @@
 const path = require("path")
-const { Client } = require("ssh2")
-const conn = new Client()
 require("dotenv").config({
   path: path.resolve(process.cwd(), "./config", ".env"),
 })
@@ -12,6 +10,7 @@ const {
   createLog,
   Spinner,
 } = require("./library")
+const device_list = process.env.HOST.split(",")
 
 // 使用cmdargu的方式指定裝置刪除資料
 //V 1.先使用dotenv抓取env內所有裝置設定
@@ -22,7 +21,7 @@ const {
 let deviceList = []
 
 ;(async () => {
-  deviceList = await getSameDevice()
+  deviceList = await getSameDevice(device_list)
   const deviceAmount = deviceList.length
   if (deviceAmount) {
     await createConn(removeURL, deviceAmount)
