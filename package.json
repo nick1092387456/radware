@@ -9,7 +9,7 @@
   },
   "pkg": {
     "scripts": [
-      "./library/*.js"
+      "./library/addURL.js"
     ],
     "targets": [
       "node16-win-x64"
@@ -19,7 +19,7 @@
   "author": "SYSCOM-Ping Feng",
   "license": "ISC",
   "dependencies": {
-    "date-and-time": "^2.2.1",
+    "date-and-time": "^2.4.3",
     "dotenv": "^16.0.0",
     "fast-csv": "^4.3.6",
     "pkg": "^5.8.1",
