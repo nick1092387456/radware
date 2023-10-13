@@ -74,10 +74,12 @@ async function addURL(index, connList) {
               stream.write(`${delFilter[i]}`)
             }
           }
+          let logEntries = []
           for (let x = 0, y = fileNames.length; x < y; x++) {
             let filterCMD = []
             let URLList = []
             URLList = URLList.concat(await parseCSV(fileNames[x]))
+            logEntries = logEntries.concat(URLList)
             filterCMD = buildFilterCommand(URLList, device)
 
             for (let i = 0, j = filterCMD.length; i < j; i++) {
@@ -94,6 +96,7 @@ async function addURL(index, connList) {
               idCount++
             }
           }
+          await createLog(logEntries.join(","), device, "previousLog")
           connectCloseMessage = `${device} adding success. Connect closed.`
           stream.write("dp update-policies set 1\nlogout\ny\n")
         })

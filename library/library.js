@@ -279,7 +279,7 @@ async function appendDomainLog(content, logName) {
   )
 
   try {
-    await fs.promises.appendFile(logPath, `${content},`)
+    // await fs.promises.appendFile(logPath, `${content},`)
     await fs.promises.appendFile(historyPath, `${content},`)
   } catch (err) {
     throw err
