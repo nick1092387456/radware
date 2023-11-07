@@ -10,44 +10,68 @@ function promptEnterKey() {
       output: process.stdout,
     })
 
-    rl.question("請按下 Enter 鍵結束...", () => {
+    rl.question("請按下 Enter 鍵結束...\n", () => {
       rl.close()
       resolve()
     })
   })
 }
 
-async function main(device) {
-  const spinner = startSpinner(`正在連接 ${device.host}...\n`)
+function updateGlobalSpinner(spinner, devices) {
+  const texts = devices.map(
+    (device, index) =>
+      `${index > 0 ? "  " : ""}${device.host} ${
+        globalSpinnerState[device.host] || "等待中..."
+      }`
+  )
+  updateSpinnerText(spinner, texts.filter(Boolean).join("\n"))
+}
+
+async function simulateDelay(duration) {
+  return new Promise((resolve) => setTimeout(resolve, duration))
+}
+
+let globalSpinnerState = {}
+async function main(device, spinner) {
+  globalSpinnerState[device.host] = `正在連接...`
+  updateGlobalSpinner(spinner, getDevices())
+
   const sshConnector = new SSHConnector()
   try {
-    //連接裝置
+    // 模擬連接延遲
+    await simulateDelay(3000)
     await sshConnector.connect(device)
 
-    //啟動會話及執行命令
+    // 模擬命令執行延遲
+    await simulateDelay(3000)
     await sshConnector.startShell()
     sshConnector.sendCommand("dir")
-    await sshConnector.waitForPrompt("bumble@BUMBLE_G14 C:\\Users\\Bumble>")
+    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
 
-    //取得輸出
+    globalSpinnerState[device.host] = `${device.host} 命令執行完成。\n`
+    updateGlobalSpinner(spinner, getDevices())
+
     const output = sshConnector.getOutput()
-    console.log(`來自 ${device.host} 的輸出:`)
+    console.log(`\n來自 ${device.host} 的輸出:\n`)
     console.log(output)
   } catch (error) {
     console.error("SSH 錯誤: ", error)
-    stopSpinner(spinner, `連接 ${device.host} 時出錯`, false)
+    globalSpinnerState[device.host] = `連接 ${device.host} 時出錯\n`
+    updateGlobalSpinner(spinner, getDevices())
   } finally {
     sshConnector.endShell()
-    stopSpinner(spinner, `${device.host} 命令執行完成。\n`)
   }
 }
 
 async function handleDevices(devices) {
+  const spinner = startSpinner("處理中...\n")
   try {
-    const promises = devices.map((device) => main(device))
+    const promises = devices.map((device) => main(device, spinner))
     await Promise.all(promises)
-    console.log("所有裝置處理完成。")
+  } catch (error) {
+    console.error("處理裝置時出錯: ", error)
   } finally {
+    stopSpinner(spinner, "所有裝置處理完成。\n")
     await promptEnterKey()
     process.exit(0)
   }

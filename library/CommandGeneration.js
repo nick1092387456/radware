@@ -3,7 +3,7 @@
 const fs = require("fs")
 const path = require("path")
 
-// 生成删除特征的命令
+// 產生刪除特徵碼指令
 function genDeleteFeature(fileName) {
   const filePath = path.resolve(process.cwd(), "./cfg", fileName)
   const data = fs.readFileSync(filePath, { encoding: "utf8" }).split(",")
@@ -17,7 +17,7 @@ function genDeleteFeature(fileName) {
   return result
 }
 
-// 生成删除过滤器的命令
+// 產生刪除過濾器指令
 function genDeleteFilter(fileName) {
   const filePath = path.resolve(process.cwd(), "./cfg", fileName)
   const data = fs.readFileSync(filePath, { encoding: "utf8" }).split(",")
@@ -28,12 +28,12 @@ function genDeleteFilter(fileName) {
   })
 }
 
-// 构建隐藏属性的命令
+// 產生初始化隱藏命令
 function buildAttribute() {
   return `hidden attributes values create type_1 User -ti 1 -va 10001`
 }
 
-// 构建过滤器命令
+// 產生過濾器指令
 function buildFilterCommand(url, device) {
   return url.map((_url) => {
     let filterName = "F_" + _url.slice(0, 25)
@@ -48,7 +48,7 @@ function buildFilterCommand(url, device) {
   })
 }
 
-// 构建特征命令
+// 產生特徵碼指令
 function buildFeatureCommand(url, fileName, idCount) {
   const baseName = path.basename(fileName)
   let featureNameTitle = ""
@@ -78,7 +78,7 @@ function buildFeatureCommand(url, fileName, idCount) {
   return `dp signatures-protection attacks user setCreate ${idCount} -n ${featureName} -f ${filterName} -dr "In Bound" -tt 25`
 }
 
-// 打包命令
+// 打包指令
 function packCommand(id) {
   return `hidden attacks attributes create ${id} type_1 attribute_10001 -ti 1 -va 10001`
 }
