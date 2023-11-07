@@ -49,29 +49,28 @@ async function appendLog(content, device, type) {
   let fileName = ""
 
   switch (type) {
-    case "dailyLog":
-      location = "./cfg/history"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH-mm")}_${device}.txt`
-      break
-    case "previousLog":
-      location = "./cfg"
-      fileName = `${device}.txt`
-      break
-    case "CMDResponse":
-      location = "./cfg/Log"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD")}_${device}.log`
-      break
-    default:
+    case "Error":
       location = "./cfg/Error"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD")}_error.log`
+      fileName = `${date.format(
+        new Date(),
+        "YYYY-MM-DD"
+      )}_${device}_failureList.log`
       break
+    // 可以根據需要增加其他類型
   }
 
+  const fullPath = path.resolve(process.cwd(), location, fileName)
+
   try {
-    await fs.promises.appendFile(
-      path.resolve(process.cwd(), location, fileName),
-      content
-    )
+    // 檢查文件是否存在以及是否為空
+    const exists = fs.existsSync(fullPath)
+    const stats = exists && (await fs.promises.stat(fullPath))
+    const shouldPrependComma = exists && stats.size > 0
+
+    // 如果文件已存在且不為空，則在内容前加逗號
+    const dataToAppend = shouldPrependComma ? "," + content : content
+
+    await fs.promises.appendFile(fullPath, dataToAppend)
   } catch (err) {
     throw err
   }

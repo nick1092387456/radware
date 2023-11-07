@@ -2,7 +2,7 @@ const getDevices = require("./getDevices")
 const SSHConnector = require("./sshConnector")
 const copyCsvToBackup = require("./backupCSVForNextTimeDelete")
 const { startSpinner, stopSpinner, updateSpinnerText } = require("./spinner")
-const { parseCSV } = require("./csvParser")
+const { parseCSV } = require("./csvParse")
 const { createLog } = require("./logger")
 const {
   startSSHConfigClipboard,
@@ -73,11 +73,11 @@ async function processAddCommand(
     updateGlobalSpinner(spinner, getDevices())
 
     sshConnector.sendCommand(buildFilterCommand(url))
-    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+    await sshConnector.waitForPrompt("Created successfully", url)
     sshConnector.sendCommand(
       buildFeatureCommand(url, `${listName}.csv`, initialId)
     )
-    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+    await sshConnector.waitForPrompt("Created successfully", url)
     sshConnector.sendCommand(packCommand(initialId))
     await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
     initialId++
@@ -174,10 +174,10 @@ async function main(device, spinner, urlLists) {
   globalSpinnerState[device.host] = `處理中...`
   updateGlobalSpinner(spinner, getDevices())
 
-  const sshConnector = new SSHConnector()
+  const sshConnector = new SSHConnector(device)
   try {
     if (process.env.TEST_MODE === "true") await simulateDelay(3000)
-    await sshConnector.connect(device)
+    await sshConnector.connect()
 
     if (process.env.TEST_MODE === "true") await simulateDelay(3000)
     await sshConnector.startShell()

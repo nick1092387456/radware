@@ -1,5 +1,5 @@
 const { Client } = require("ssh2")
-
+const { appendLog } = require("./logger")
 const algorithms = {
   kex: [
     "diffie-hellman-group1-sha1",
@@ -29,12 +29,13 @@ const algorithms = {
 }
 
 class SSHConnector {
-  constructor() {
+  constructor(device) {
     this.client = new Client()
     this.dataBuffer = ""
+    this.device = device
   }
 
-  connect(device) {
+  connect() {
     return new Promise((resolve, reject) => {
       this.client
         .on("ready", () => {
@@ -44,10 +45,10 @@ class SSHConnector {
           reject(err)
         })
         .connect({
-          host: device.host,
+          host: this.device.host,
           port: 22,
-          username: device.user,
-          password: device.password,
+          username: this.device.user,
+          password: this.device.password,
           algorithms: process.env.TEST_MODE === "true" ? undefined : algorithms,
         })
     })
@@ -84,14 +85,22 @@ class SSHConnector {
     }
   }
 
-  waitForPrompt(promptString) {
+  waitForPrompt(promptString, data, timeout = 3000) {
     return new Promise((resolve) => {
-      const checkInterval = setInterval(() => {
+      const startTime = Date.now()
+      const checkInterval = setInterval(async () => {
         if (this.dataBuffer.includes(promptString)) {
           clearInterval(checkInterval)
           resolve()
+        } else if (Date.now() - startTime > timeout) {
+          clearInterval(checkInterval)
+          if (data) {
+            // 如果提供了data，記錄超時日誌
+            await appendLog(data, this.device.host, "Error")
+          }
+          resolve()
         }
-      }, 1000)
+      }, parseInt(process.env.PROMPT_WAIT_TIME, 10) || 1000)
     })
   }
 
