@@ -16,6 +16,7 @@ function stopSpinner(spinner, text, isSuccess = true) {
   } else {
     spinner.fail(text)
   }
+  spinner.stop()
 }
 
 function updateSpinnerText(spinner, text) {
