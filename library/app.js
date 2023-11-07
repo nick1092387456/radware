@@ -3,7 +3,7 @@ const SSHConnector = require("./sshConnector")
 const copyCsvToBackup = require("./backupCSVForNextTimeDelete")
 const { startSpinner, stopSpinner, updateSpinnerText } = require("./spinner")
 const { parseCSV } = require("./csvParse")
-const { createLog } = require("./logger")
+const { createLog, appendErrorLogToCsv } = require("./logger")
 const {
   startSSHConfigClipboard,
   genDeleteFeature,
@@ -66,25 +66,55 @@ async function processAddCommand(
   spinner,
   deviceHost
 ) {
+  let errorCount = 0 // 初始化錯誤計數器
+
   for (let i = 0; i < urlList.length; i++) {
     const url = urlList[i]
+    let isErrorOccurred = false // 標記是否發生錯誤
+
     // 更新 Spinner 文字為當前 URL 處理狀態
     globalSpinnerState[deviceHost] = `正在處理: ${url}`
     updateGlobalSpinner(spinner, getDevices())
 
+    // 嘗試執行 SSH 命令並檢查其成功與否
     sshConnector.sendCommand(buildFilterCommand(url))
-    await sshConnector.waitForPrompt("Created successfully", url)
+    if (!(await sshConnector.waitForPrompt("Created successfully"))) {
+      isErrorOccurred = true // 如果任務失敗，標記錯誤發生
+    }
+
     sshConnector.sendCommand(
       buildFeatureCommand(url, `${listName}.csv`, initialId)
     )
-    await sshConnector.waitForPrompt("Created successfully", url)
+    if (
+      !isErrorOccurred &&
+      !(await sshConnector.waitForPrompt("Created successfully"))
+    ) {
+      isErrorOccurred = true
+    }
+
     sshConnector.sendCommand(packCommand(initialId))
-    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+    if (
+      !isErrorOccurred &&
+      !(await sshConnector.waitForPrompt(process.env.PROMPT_STRING))
+    ) {
+      isErrorOccurred = true
+    }
+
+    if (isErrorOccurred) {
+      errorCount++ // 增加錯誤計數
+      await appendErrorLogToCsv(url, deviceHost, "Error") // 寫入錯誤日誌
+    }
     initialId++
+  }
+
+  if (errorCount) {
+    console.log(`\r\n${listName}有 ${errorCount} 個資料寫入失敗。\r\n`)
   }
   globalSpinnerState[deviceHost] = `所有 ${listName} 命令處理完成。`
   updateGlobalSpinner(spinner, getDevices())
-  return initialId // 回傳更新後的 initialId
+
+  // 返回更新后的 initialId 和錯誤計數
+  return { initialId, errorCount }
 }
 
 //讀取RadWare裝置中已設定的資料，並解析出ID與過濾器名稱

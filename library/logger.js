@@ -1,6 +1,7 @@
 const fs = require("fs")
 const path = require("path")
 const date = require("date-and-time")
+const csv = require("fast-csv")
 const process = require("process")
 
 /**
@@ -44,7 +45,24 @@ async function createLog(content, device, type) {
  * @param {string} device - 设备名称或标识
  * @param {string} type - 日志类型 (dailyLog, previousLog, CMDResponse, Error)
  */
-async function appendLog(content, device, type) {
+
+async function appendErrorLogToCsv(url, device, type) {
+  async function getLastSN(fullPath) {
+    if (!fs.existsSync(fullPath)) {
+      return 0
+    }
+
+    return new Promise((resolve, reject) => {
+      let lastSN = 0
+      fs.createReadStream(fullPath)
+        .pipe(csv.parse({ headers: true }))
+        .on("error", (error) => reject(error))
+        .on("data", (row) => {
+          lastSN = parseInt(row.SN, 10)
+        })
+        .on("end", (rowCount) => resolve(lastSN))
+    })
+  }
   let location = ""
   let fileName = ""
 
@@ -56,42 +74,36 @@ async function appendLog(content, device, type) {
         "YYYY-MM-DD"
       )}_${device}_failureList.log`
       break
-    // 可以根據需要增加其他類型
+    // ... 其他類型
   }
 
   const fullPath = path.resolve(process.cwd(), location, fileName)
 
   try {
-    // 檢查文件是否存在以及是否為空
-    const exists = fs.existsSync(fullPath)
-    const stats = exists && (await fs.promises.stat(fullPath))
-    const shouldPrependComma = exists && stats.size > 0
+    const snCounter = (await getLastSN(fullPath)) + 1
+    const fileExists = fs.existsSync(fullPath)
+    const shouldAppendHeader =
+      !fileExists || (await fs.promises.stat(fullPath)).size === 0
 
-    // 如果文件已存在且不為空，則在内容前加逗號
-    const dataToAppend = shouldPrependComma ? "," + content : content
+    // 如果文件不存在或大小為0，則先寫入BOM
+    if (shouldAppendHeader) {
+      await fs.promises.writeFile(fullPath, "\ufeff", { flag: "a" })
+    }
 
-    await fs.promises.appendFile(fullPath, dataToAppend)
-  } catch (err) {
-    throw err
-  }
-}
+    const ws = fs.createWriteStream(fullPath, { flags: "a" })
+    const csvStream = csv.format({
+      headers: shouldAppendHeader,
+      includeEndRowDelimiter: true,
+    })
 
-/**
- * 追加内容到特定设备的日志文件
- * @param {string} content - 要追加的内容
- * @param {string} logName - 日志名称或设备标识
- */
-async function appendDomainLog(content, logName) {
-  const logPath = path.resolve(process.cwd(), "./cfg", `${logName}.txt`)
-  const historyPath = path.resolve(
-    process.cwd(),
-    "./cfg/history",
-    `${date.format(new Date(), "YYYY-MM-DD_HH-mm")}_${logName}.txt`
-  )
-
-  try {
-    // 追加到历史日志
-    await fs.promises.appendFile(historyPath, `${content},`)
+    csvStream.pipe(ws).on("end", () => process.exit())
+    csvStream.write({
+      SN: snCounter,
+      "DN/IP-List": url,
+      "First-Date": "",
+      "Last-Date": "",
+    })
+    csvStream.end()
   } catch (err) {
     throw err
   }
@@ -99,6 +111,5 @@ async function appendDomainLog(content, logName) {
 
 module.exports = {
   createLog,
-  appendLog,
-  appendDomainLog,
+  appendErrorLogToCsv,
 }

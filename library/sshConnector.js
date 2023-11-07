@@ -85,20 +85,16 @@ class SSHConnector {
     }
   }
 
-  waitForPrompt(promptString, data, timeout = 3000) {
+  waitForPrompt(promptString, timeout = 3000) {
     return new Promise((resolve) => {
       const startTime = Date.now()
       const checkInterval = setInterval(async () => {
         if (this.dataBuffer.includes(promptString)) {
           clearInterval(checkInterval)
-          resolve()
+          resolve(true)
         } else if (Date.now() - startTime > timeout) {
           clearInterval(checkInterval)
-          if (data) {
-            // 如果提供了data，記錄超時日誌
-            await appendLog(data, this.device.host, "Error")
-          }
-          resolve()
+          resolve(false)
         }
       }, parseInt(process.env.PROMPT_WAIT_TIME, 10) || 1000)
     })
