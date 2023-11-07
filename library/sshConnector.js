@@ -91,7 +91,7 @@ class SSHConnector {
           clearInterval(checkInterval)
           resolve()
         }
-      }, 1000) // Check every 100ms
+      }, 1000)
     })
   }
 

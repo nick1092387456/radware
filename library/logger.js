@@ -14,15 +14,7 @@ async function createLog(content, device, type) {
   let fileName = ""
 
   switch (type) {
-    case "dailyLog":
-      location = "./cfg/history"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH-mm")}_${device}.txt`
-      break
-    case "previousLog":
-      location = "./cfg"
-      fileName = `${device}.txt`
-      break
-    case "CMDResponse":
+    case "Log":
       location = "./cfg/Log"
       fileName = `${date.format(new Date(), "YYYY-MM-DD_HH-mm")}_${device}.log`
       break
