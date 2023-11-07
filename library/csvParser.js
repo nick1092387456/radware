@@ -32,14 +32,18 @@ async function parseCSV(csvFileName) {
     }
 
     const rowCount = URLList.length
-    const message =
-      baseName === "Hinet清單.csv"
-        ? `Hinet清單處理中，共 ${rowCount} 個有效網址...`
-        : `GSN清單處理中，共 ${rowCount} 個有效網址...`
-    console.log(message)
+    let message = ""
+    switch (csvFileName) {
+      case "Hinet清單.csv":
+        console.log(`Hinet清單處理中，共 ${rowCount} 個有效網址...`)
+        break
+      case "GSN清單.csv":
+        console.log(` GSN清單處理中，共 ${rowCount} 個有效網址...`)
+        break
+    }
 
     if (shouldCheckUrls && errorURLList.length) {
-      console.log(`有 ${errorURLList.length} 個無效網址。`)
+      console.log(`${csvFileName}有 ${errorURLList.length} 個無效網址。`)
       await createLog(errorURLList, csvFileName, "Error")
     }
     if (URLList.length) return URLList

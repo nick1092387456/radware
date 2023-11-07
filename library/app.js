@@ -98,7 +98,7 @@ async function main(device, spinner, urlLists) {
       urlLists.hinet.length + 300001
     )
 
-    // 在寫入
+    // 再寫入
     await processAddCommand(
       sshConnector,
       urlLists.hinet,
@@ -112,7 +112,7 @@ async function main(device, spinner, urlLists) {
       urlLists.hinet.length + 300001
     )
 
-    // 設定update指令
+    // 寫入設定生效指令
     sshConnector.sendCommand(setCommand())
     await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
 
@@ -133,7 +133,7 @@ async function main(device, spinner, urlLists) {
 }
 
 async function handleDevices(devices) {
-  const spinner = startSpinner("處理中...\n")
+  const spinner = startSpinner()
   try {
     const urlLists = {
       hinet: await parseCSV("Hinet清單.csv"),
