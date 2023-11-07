@@ -1,6 +1,5 @@
 const getDevices = require("./getDevices")
 const SSHConnector = require("./sshConnector")
-
 const { startSpinner, stopSpinner, updateSpinnerText } = require("./spinner")
 const readline = require("readline")
 

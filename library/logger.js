@@ -26,6 +26,10 @@ async function createLog(content, device, type) {
       location = "./cfg/Log"
       fileName = `${date.format(new Date(), "YYYY-MM-DD_HH-mm")}_${device}.log`
       break
+    case "Error":
+      location = "./cfg/Error"
+      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH-mm")}_error.log`
+      break
     default:
       location = "./cfg/Error"
       fileName = `${date.format(new Date(), "YYYY-MM-DD_HH-mm")}_error.log`
