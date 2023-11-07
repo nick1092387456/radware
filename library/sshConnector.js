@@ -48,7 +48,7 @@ class SSHConnector {
           port: 22,
           username: device.user,
           password: device.password,
-          algorithms: process.env.TEST_MODE ? undefined : algorithms,
+          algorithms: process.env.TEST_MODE === "true" ? undefined : algorithms,
         })
     })
   }
@@ -76,7 +76,12 @@ class SSHConnector {
   }
 
   sendCommand(command) {
-    this.stream.write(command + "\n\r")
+    if (Array.isArray(command)) {
+      const commandString = command.join("\r\n")
+      this.stream.write(commandString + "\r\n")
+    } else {
+      this.stream.write(command + "\r\n")
+    }
   }
 
   waitForPrompt(promptString) {
@@ -86,12 +91,12 @@ class SSHConnector {
           clearInterval(checkInterval)
           resolve()
         }
-      }, 100) // Check every 100ms
+      }, 1000) // Check every 100ms
     })
   }
 
   endShell() {
-    this.stream.end("exit\n\r")
+    this.stream.end(process.env.PROMPT_EXIT)
   }
 
   getOutput() {
