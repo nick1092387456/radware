@@ -254,7 +254,7 @@ async function main(device, spinner, urlLists) {
     console.error("SSH 錯誤: ", error)
     errorOccurred = true
   } finally {
-    if (errorOccurred) {
+    if (!errorOccurred) {
       copyCsvToBackup("./public/Hinet清單.csv", "./public/backup/")
       copyCsvToBackup("./public/GSN清單.csv", "./public/backup/")
     }
