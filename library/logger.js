@@ -51,7 +51,7 @@ async function createLog(content, device, type) {
  * @param {string} type - 日志类型 (dailyLog, previousLog, CMDResponse, Error)
  */
 
-async function appendErrorLogToCsv(url, device, type) {
+async function appendLogToCsv(url, device, type) {
   async function getLastSN(fullPath) {
     if (!fs.existsSync(fullPath)) {
       return 0
@@ -72,12 +72,16 @@ async function appendErrorLogToCsv(url, device, type) {
   let fileName = ""
 
   switch (type) {
+    case "AddSuccess":
+      location = "./public/backup"
+      fileName = `${device}_addSuccessList.csv`
+      break
     case "AddError":
       location = "./cfg/Error"
       fileName = `${date.format(
         new Date(),
         "YYYY-MM-DD"
-      )}_${device}_addFailure.csv`
+      )}_${device}_addFailureList.csv`
       break
     case "filterDeleteError":
       location = "./cfg/Error"
@@ -129,5 +133,5 @@ async function appendErrorLogToCsv(url, device, type) {
 
 module.exports = {
   createLog,
-  appendErrorLogToCsv,
+  appendLogToCsv,
 }

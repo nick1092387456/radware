@@ -11,6 +11,17 @@ function validateArray(arr, name) {
   }
 }
 
+// 新增的函數來檢查重複的HOST值
+function checkDuplicates(arr, name) {
+  const seen = new Set()
+  arr.forEach((e, i) => {
+    if (seen.has(e)) {
+      throw new Error(`/config/.env 的 ${name} 在第${i + 1}個項目是重複的`)
+    }
+    seen.add(e)
+  })
+}
+
 function getDevices() {
   try {
     const hosts = process.env.HOST.split(",")
@@ -22,11 +33,14 @@ function getDevices() {
     validateArray(users, "USER")
     validateArray(passwords, "PRIVATEKEY")
 
+    // 檢查HOST是否有重複的值
+    checkDuplicates(hosts, "HOST")
+
     // 檢查項目數量是否一致，找出項目最少的那個
     const maxLength = hosts.length
-    if (users.length < maxLength) {
+    if (users.length !== maxLength) {
       throw new Error(`USER 輸入數量需與HOST一致`)
-    } else if (passwords.length < maxLength) {
+    } else if (passwords.length !== maxLength) {
       throw new Error(`PRIVATEKEY 輸入數量需與HOST一致`)
     }
 
@@ -42,7 +56,8 @@ function getDevices() {
     }
     return devices
   } catch (error) {
-    console.error(`\x1b[31m\x1b[1m${error.message}\x1b[0m`)
+    console.log(`\x1b[31m\x1b[1m${error.message}\x1b[0m`)
+    return []
   }
 }
 

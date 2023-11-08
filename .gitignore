@@ -5,4 +5,7 @@ public/*
 public/backup/*
 !public/backup/.gitkeep
 !public/backup/
-cfg
+cfg/Error/*
+!cfg/Error/.gitkeep
+cfg/Log/*
+!cfg/Log/.gitkeep
