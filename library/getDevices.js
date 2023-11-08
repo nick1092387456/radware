@@ -25,12 +25,12 @@ function checkDuplicates(arr, name) {
 function getDevices() {
   try {
     const hosts = process.env.HOST.split(",")
-    const users = process.env.USER.split(",")
+    const users = process.env.USERS.split(",")
     const passwords = process.env.PRIVATEKEY.split(",")
 
     // 檢查空字串
     validateArray(hosts, "HOST")
-    validateArray(users, "USER")
+    validateArray(users, "USERS")
     validateArray(passwords, "PRIVATEKEY")
 
     // 檢查HOST是否有重複的值
@@ -39,7 +39,7 @@ function getDevices() {
     // 檢查項目數量是否一致，找出項目最少的那個
     const maxLength = hosts.length
     if (users.length !== maxLength) {
-      throw new Error(`USER 輸入數量需與HOST一致`)
+      throw new Error(`USERS 輸入數量需與HOST一致`)
     } else if (passwords.length !== maxLength) {
       throw new Error(`PRIVATEKEY 輸入數量需與HOST一致`)
     }

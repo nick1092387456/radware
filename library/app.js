@@ -272,11 +272,11 @@ async function handleDevices(devices) {
     }
     const promises = devices.map((device) => main(device, spinner, urlLists))
     await Promise.all(promises)
-    stopSpinner(spinner, "所有裝置處理完成。\n")
-    console.timeEnd("執行時間") // 結束計時並輸出執行時間
   } catch (error) {
     console.error("處理裝置時出錯: ", error)
   } finally {
+    stopSpinner(spinner, "所有裝置處理完成。\n")
+    console.timeEnd("執行時間") // 結束計時並輸出執行時間
     await promptEnterKey()
     process.exit(0)
   }
