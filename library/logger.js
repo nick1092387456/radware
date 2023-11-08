@@ -17,23 +17,28 @@ async function createLog(content, device, type) {
   switch (type) {
     case "Log":
       location = "./cfg/Log"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH-mm")}_${device}.log`
+      fileName = `${date.format(new Date(), "YYYY-MM-DD")}_${device}.log`
       break
     case "Error":
       location = "./cfg/Error"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH-mm")}_error.log`
+      fileName = `${date.format(new Date(), "YYYY-MM-DD")}_error.log`
       break
     default:
       location = "./cfg/Error"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH-mm")}_error.log`
+      fileName = `${date.format(new Date(), "YYYY-MM-DD")}_error.log`
       break
   }
 
+  const filePath = path.resolve(process.cwd(), location, fileName)
+
   try {
-    await fs.promises.writeFile(
-      path.resolve(process.cwd(), location, fileName),
-      content
-    )
+    if (type === "Log") {
+      // 如果日誌類型為'Log'，則追加到文件中
+      await fs.promises.appendFile(filePath, content)
+    } else {
+      // 其他類型則創建或覆蓋文件
+      await fs.promises.writeFile(filePath, content)
+    }
   } catch (err) {
     console.error(err)
   }
@@ -72,7 +77,7 @@ async function appendErrorLogToCsv(url, device, type) {
       fileName = `${date.format(
         new Date(),
         "YYYY-MM-DD"
-      )}_${device}_failureList.log`
+      )}_${device}_failureList.csv`
       break
     // ... 其他類型
   }

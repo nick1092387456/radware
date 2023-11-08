@@ -1,5 +1,5 @@
 const { Client } = require("ssh2")
-const { appendLog } = require("./logger")
+const { createLog } = require("./logger")
 const algorithms = {
   kex: [
     "diffie-hellman-group1-sha1",
@@ -33,6 +33,7 @@ class SSHConnector {
     this.client = new Client()
     this.dataBuffer = ""
     this.device = device
+    this.logInterval = null
   }
 
   connect() {
@@ -61,15 +62,24 @@ class SSHConnector {
           return reject(err)
         }
         this.stream = stream
+
+        this.logInterval = setInterval(() => {
+          if (this.dataBuffer.length > 0) {
+            createLog(this.dataBuffer, this.device.host, "Log")
+            this.dataBuffer = ""
+          }
+        }, 3000)
+
         stream
           .on("close", () => {
+            clearInterval(this.logInterval)
             this.client.end()
           })
           .on("data", (data) => {
             this.dataBuffer += data
           })
           .stderr.on("data", (data) => {
-            this.dataBuffer += data
+            createLog(data, this.device.host, "Error")
           })
         resolve()
       })

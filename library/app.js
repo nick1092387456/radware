@@ -17,6 +17,8 @@ const {
   cleanString,
 } = require("./commandGenerator")
 const readline = require("readline")
+const devices = getDevices()
+let globalSpinnerState = {}
 
 function promptEnterKey() {
   return new Promise((resolve) => {
@@ -36,10 +38,10 @@ function updateGlobalSpinner(spinner, devices) {
   const texts = devices.map(
     (device, index) =>
       `${index > 0 ? "  " : ""}${device.host} ${
-        globalSpinnerState[device.host] || "等待中..."
+        globalSpinnerState[device.host]
       }`
   )
-  updateSpinnerText(spinner, texts.filter(Boolean).join("\n"))
+  updateSpinnerText(spinner, texts.join("\r\n"))
 }
 
 async function simulateDelay(duration) {
@@ -74,7 +76,7 @@ async function processAddCommand(
 
     // 更新 Spinner 文字為當前 URL 處理狀態
     globalSpinnerState[deviceHost] = `正在處理: ${url}`
-    updateGlobalSpinner(spinner, getDevices())
+    updateGlobalSpinner(spinner, devices)
 
     // 嘗試執行 SSH 命令並檢查其成功與否
     sshConnector.sendCommand(buildFilterCommand(url))
@@ -95,7 +97,7 @@ async function processAddCommand(
     sshConnector.sendCommand(packCommand(initialId))
     if (
       !isErrorOccurred &&
-      !(await sshConnector.waitForPrompt(process.env.PROMPT_STRING))
+      !(await sshConnector.waitForPrompt("Created successfully"))
     ) {
       isErrorOccurred = true
     }
@@ -107,11 +109,12 @@ async function processAddCommand(
     initialId++
   }
 
-  if (errorCount) {
-    console.log(`\r\n${listName}有 ${errorCount} 個資料寫入失敗。\r\n`)
-  }
-  globalSpinnerState[deviceHost] = `所有 ${listName} 命令處理完成。`
-  updateGlobalSpinner(spinner, getDevices())
+  // if (errorCount) {
+  //   globalSpinnerState[
+  //     deviceHost
+  //   ] = `在寫入 ${listName} 有 ${errorCount} 個資料寫入失敗。`
+  //   updateGlobalSpinner(spinner, devices)
+  // }
 
   // 返回更新后的 initialId 和錯誤計數
   return { initialId, errorCount }
@@ -199,12 +202,12 @@ async function processDeleteCommandsByGetHistorySettingOutput(
   }
 }
 
-let globalSpinnerState = {}
 async function main(device, spinner, urlLists) {
   globalSpinnerState[device.host] = `處理中...`
-  updateGlobalSpinner(spinner, getDevices())
+  updateGlobalSpinner(spinner, devices)
 
   const sshConnector = new SSHConnector(device)
+  let errorOccurred = false // 新增錯誤標記
   try {
     if (process.env.TEST_MODE === "true") await simulateDelay(3000)
     await sshConnector.connect()
@@ -218,11 +221,19 @@ async function main(device, spinner, urlLists) {
     await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
 
     // 先刪除
-    await processDeleteCommands(sshConnector, urlLists.hinet, 300001)
+    const historyHinetList = await parseCSV(
+      "Hinet清單_backup.csv",
+      "./public/backup"
+    )
+    await processDeleteCommands(sshConnector, historyHinetList, 300001)
+    const historyGsnList = await parseCSV(
+      "GSN清單_backup.csv",
+      "./public/backup"
+    )
     await processDeleteCommands(
       sshConnector,
-      urlLists.gsn,
-      urlLists.hinet.length + 300001
+      historyGsnList,
+      historyGsnList.length + 300001
     )
 
     // 再寫入
@@ -246,23 +257,14 @@ async function main(device, spinner, urlLists) {
     // 寫入設定生效指令
     sshConnector.sendCommand(setCommand())
     await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
-
-    globalSpinnerState[device.host] = `命令執行完成。\r\n`
-    updateGlobalSpinner(spinner, getDevices())
-
-    // 取得輸出
-    const output = sshConnector.getOutput()
-    if (process.env.TEST_MODE === "true") {
-      console.log(`\n來自 ${device.host} 的輸出:\n`)
-      console.log(output)
-    }
-    await createLog(output, device.host, "Log")
   } catch (error) {
     console.error("SSH 錯誤: ", error)
-    globalSpinnerState[device.host] = `連接 ${device.host} 時出錯\n`
-    updateGlobalSpinner(spinner, getDevices())
+    errorOccurred = true
   } finally {
-    copyCsvToBackup("./public/Hinet清單.csv", "./public/backup/")
+    if (errorOccurred) {
+      copyCsvToBackup("./public/Hinet清單.csv", "./public/backup/")
+      copyCsvToBackup("./public/GSN清單.csv", "./public/backup/")
+    }
     sshConnector.endShell()
   }
 }

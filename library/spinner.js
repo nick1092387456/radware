@@ -4,7 +4,7 @@ function startSpinner(text) {
   const spinner = ora({
     text: text,
     spinner: "dots",
-    color: "blue",
+    color: "green",
   }).start()
 
   return spinner
