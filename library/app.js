@@ -109,13 +109,6 @@ async function processAddCommand(
     initialId++
   }
 
-  // if (errorCount) {
-  //   globalSpinnerState[
-  //     deviceHost
-  //   ] = `在寫入 ${listName} 有 ${errorCount} 個資料寫入失敗。`
-  //   updateGlobalSpinner(spinner, devices)
-  // }
-
   // 返回更新后的 initialId 和錯誤計數
   return { initialId, errorCount }
 }

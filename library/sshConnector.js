@@ -33,6 +33,7 @@ class SSHConnector {
     this.client = new Client()
     this.dataBuffer = ""
     this.device = device
+    this.lastCheckIndex = 0 // 新增一個變量來記錄上一次檢查的位置
     this.logInterval = null
   }
 
@@ -63,16 +64,10 @@ class SSHConnector {
         }
         this.stream = stream
 
-        this.logInterval = setInterval(() => {
-          if (this.dataBuffer.length > 0) {
-            createLog(this.dataBuffer, this.device.host, "Log")
-            this.dataBuffer = ""
-          }
-        }, 3000)
-
         stream
           .on("close", () => {
-            clearInterval(this.logInterval)
+            createLog(this.dataBuffer, this.device.host, "Log")
+            this.dataBuffer = ""
             this.client.end()
           })
           .on("data", (data) => {
@@ -98,12 +93,19 @@ class SSHConnector {
   waitForPrompt(promptString, timeout = 3000) {
     return new Promise((resolve) => {
       const startTime = Date.now()
-      const checkInterval = setInterval(async () => {
-        if (this.dataBuffer.includes(promptString)) {
+      const checkInterval = setInterval(() => {
+        // 從上一次檢查的位置開始尋找提示字串
+        const foundIndex = this.dataBuffer.indexOf(
+          promptString,
+          this.lastCheckIndex
+        )
+        if (foundIndex !== -1) {
           clearInterval(checkInterval)
+          this.lastCheckIndex = foundIndex + promptString.length // 更新最後檢查的位置
           resolve(true)
         } else if (Date.now() - startTime > timeout) {
           clearInterval(checkInterval)
+          this.lastCheckIndex = this.dataBuffer.length // 超時則更新最後檢查的位置為當前數據緩衝的終點
           resolve(false)
         }
       }, parseInt(process.env.PROMPT_WAIT_TIME, 10) || 1000)
