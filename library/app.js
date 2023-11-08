@@ -3,7 +3,7 @@ const SSHConnector = require("./sshConnector")
 const copyCsvToBackup = require("./backupCSVForNextTimeDelete")
 const { startSpinner, stopSpinner, updateSpinnerText } = require("./spinner")
 const { parseCSV } = require("./csvParse")
-const { appendErrorLogToCsv } = require("./logger")
+const { createLog, appendErrorLogToCsv } = require("./logger")
 const {
   startSSHConfigClipboard,
   genDeleteFeature,
@@ -248,12 +248,17 @@ async function main(device, spinner, urlLists) {
       device.host
     )
 
+    // 在終端機中顯示設定清單紀錄
+    sshConnector.sendCommand("dp signatures-protection attacks user get")
+    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+
     // 寫入設定生效指令
     sshConnector.sendCommand(setCommand())
     await sshConnector.waitForPrompt("Updated successfully")
 
-    sshConnector.sendCommand("dp signatures-protection attacks user get")
-    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+    // 取得終端console中的紀錄
+    const output = sshConnector.getOutput()
+    await createLog(output, device.host, "Log")
   } catch (error) {
     console.error("SSH 錯誤: ", error)
     errorOccurred = true

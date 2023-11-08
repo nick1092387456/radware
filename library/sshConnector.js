@@ -66,7 +66,6 @@ class SSHConnector {
 
         stream
           .on("close", () => {
-            createLog(this.dataBuffer, this.device.host, "Log")
             this.dataBuffer = ""
             this.client.end()
           })
