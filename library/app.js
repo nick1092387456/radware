@@ -3,7 +3,7 @@ const SSHConnector = require("./sshConnector")
 const copyCsvToBackup = require("./backupCSVForNextTimeDelete")
 const { startSpinner, stopSpinner, updateSpinnerText } = require("./spinner")
 const { parseCSV } = require("./csvParse")
-const { createLog, appendErrorLogToCsv } = require("./logger")
+const { appendErrorLogToCsv } = require("./logger")
 const {
   startSSHConfigClipboard,
   genDeleteFeature,
@@ -48,15 +48,19 @@ async function simulateDelay(duration) {
   return new Promise((resolve) => setTimeout(resolve, duration))
 }
 
-async function processDeleteCommands(sshConnector, urlList, initialId) {
+async function processDeleteCommands(sshConnector, device, urlList, initialId) {
   for (const url of urlList) {
     // 發送刪除特徵指令
     const deleteFeatureCommand = genDeleteFeature(initialId++)
     sshConnector.sendCommand(deleteFeatureCommand)
-    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+    if (!(await sshConnector.waitForPrompt("Deleted successfully")))
+      appendErrorLogToCsv(url, device, "featureDeleteError") // 寫入錯誤日誌
+  }
+  for (const url of urlList) {
     // 發送刪除過濾器指令
     sshConnector.sendCommand(genDeleteFilter(url))
-    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+    if (!(await sshConnector.waitForPrompt("Deleted successfully")))
+      appendErrorLogToCsv(url, device, "filterDeleteError") // 寫入錯誤日誌
   }
 }
 
@@ -75,7 +79,9 @@ async function processAddCommand(
     let isErrorOccurred = false // 標記是否發生錯誤
 
     // 更新 Spinner 文字為當前 URL 處理狀態
-    globalSpinnerState[deviceHost] = `正在處理: ${url}`
+    globalSpinnerState[deviceHost] = `正在處理: "${url}" ${listName} 第 ${
+      i + 1
+    } 筆`
     updateGlobalSpinner(spinner, devices)
 
     // 嘗試執行 SSH 命令並檢查其成功與否
@@ -104,7 +110,7 @@ async function processAddCommand(
 
     if (isErrorOccurred) {
       errorCount++ // 增加錯誤計數
-      await appendErrorLogToCsv(url, deviceHost, "Error") // 寫入錯誤日誌
+      await appendErrorLogToCsv(url, deviceHost, "AddError") // 寫入錯誤日誌
     }
     initialId++
   }
@@ -211,23 +217,18 @@ async function main(device, spinner, urlLists) {
     // 初始指令
     const initialCommand = []
     initialCommand.push(buildAttribute())
+    sshConnector.sendCommand(initialCommand)
     await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
 
     // 先刪除
-    const historyHinetList = await parseCSV(
-      "Hinet清單_backup.csv",
-      "./public/backup"
+    let deleteList = []
+    deleteList = deleteList.concat(
+      await parseCSV("Hinet清單_backup.csv", "./public/backup")
     )
-    await processDeleteCommands(sshConnector, historyHinetList, 300001)
-    const historyGsnList = await parseCSV(
-      "GSN清單_backup.csv",
-      "./public/backup"
+    deleteList = deleteList.concat(
+      await parseCSV("GSN清單_backup.csv", "./public/backup")
     )
-    await processDeleteCommands(
-      sshConnector,
-      historyGsnList,
-      historyGsnList.length + 300001
-    )
+    await processDeleteCommands(sshConnector, device.host, deleteList, 300001)
 
     // 再寫入
     await processAddCommand(
@@ -249,6 +250,9 @@ async function main(device, spinner, urlLists) {
 
     // 寫入設定生效指令
     sshConnector.sendCommand(setCommand())
+    await sshConnector.waitForPrompt("Updated successfully")
+
+    sshConnector.sendCommand("dp signatures-protection attacks user get")
     await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
   } catch (error) {
     console.error("SSH 錯誤: ", error)
@@ -264,6 +268,7 @@ async function main(device, spinner, urlLists) {
 
 async function handleDevices(devices) {
   const spinner = startSpinner()
+  console.time("執行時間") // 開始計時
   try {
     const urlLists = {
       hinet: await parseCSV("Hinet清單.csv"),
@@ -275,6 +280,7 @@ async function handleDevices(devices) {
     console.error("處理裝置時出錯: ", error)
   } finally {
     stopSpinner(spinner, "所有裝置處理完成。\n")
+    console.timeEnd("執行時間") // 結束計時並輸出執行時間
     await promptEnterKey()
     process.exit(0)
   }

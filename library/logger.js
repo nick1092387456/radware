@@ -72,14 +72,27 @@ async function appendErrorLogToCsv(url, device, type) {
   let fileName = ""
 
   switch (type) {
-    case "Error":
+    case "AddError":
       location = "./cfg/Error"
       fileName = `${date.format(
         new Date(),
         "YYYY-MM-DD"
-      )}_${device}_failureList.csv`
+      )}_${device}_addFailure.csv`
       break
-    // ... 其他類型
+    case "filterDeleteError":
+      location = "./cfg/Error"
+      fileName = `${date.format(
+        new Date(),
+        "YYYY-MM-DD"
+      )}_${device}_filterDeleteErrorList.csv`
+      break
+    case "featureDeleteError":
+      location = "./cfg/Error"
+      fileName = `${date.format(
+        new Date(),
+        "YYYY-MM-DD"
+      )}_${device}_featureDeleteErrorList.csv`
+      break
   }
 
   const fullPath = path.resolve(process.cwd(), location, fileName)
