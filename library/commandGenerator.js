@@ -15,8 +15,24 @@ function startSSHConfigClipboard() {
 }
 
 // 產生初始化隱藏命令
-function buildAttribute() {
-  return `hidden attributes values create type_1 User -ti 1 -va 10001`
+function initialCommand() {
+  let commands = []
+  // 關閉終端分頁
+  commands.push("manage terminal more-prompt set off")
+  // 管理終端輸出和指令設定
+  commands.push("manage terminal grid-mode set disable")
+  commands.push("manage terminal traps-output set 1")
+  commands.push("dp reporting global send-terminal set 2")
+  // 開始批量指令發送
+  commands.push("system config paste start")
+  // 加入您原本的指令
+  commands.push("hidden attributes values create type_1 User -ti 1 -va 10001")
+  // 將指令串接為一個字符串並返回
+  return commands.join("\r\n")
+}
+
+function stopSystemConfigPaste() {
+  return `system config paste stop`
 }
 
 // 產生過濾器指令
@@ -82,7 +98,8 @@ module.exports = {
   startSSHConfigClipboard,
   genDeleteFeature,
   genDeleteFilter,
-  buildAttribute,
+  initialCommand,
+  stopSystemConfigPaste,
   buildFilterCommand,
   buildFeatureCommand,
   packCommand,

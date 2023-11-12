@@ -6,7 +6,8 @@ const { createLog, appendLogToCsv } = require("./logger")
 const {
   genDeleteFeature,
   genDeleteFilter,
-  buildAttribute,
+  initialCommand,
+  stopSystemConfigPaste,
   buildFilterCommand,
   buildFeatureCommand,
   packCommand,
@@ -213,9 +214,7 @@ async function main(device, spinner, urlLists) {
     await sshConnector.startShell()
 
     // 初始指令
-    const initialCommand = []
-    initialCommand.push(buildAttribute())
-    sshConnector.sendCommand(initialCommand)
+    sshConnector.sendCommand(initialCommand())
     await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
 
     // 先刪除
@@ -250,6 +249,10 @@ async function main(device, spinner, urlLists) {
     // 寫入設定生效指令
     sshConnector.sendCommand(setCommand())
     await sshConnector.waitForPrompt("Updated successfully")
+
+    // 寫入停止ssh config剪貼簿指令
+    sshConnector.sendCommand(stopSystemConfigPaste())
+    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
 
     // 取得終端console中的紀錄
     const output = sshConnector.getOutput()
