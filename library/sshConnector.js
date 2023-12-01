@@ -111,6 +111,16 @@ class SSHConnector {
     })
   }
 
+  getOutputAfterPrompt(promptString) {
+    const promptIndex = this.dataBuffer.indexOf(promptString)
+    if (promptIndex !== -1) {
+      // 返回提示字串後的數據
+      return this.dataBuffer.substring(promptIndex + promptString.length)
+    }
+    // 如果沒有找到提示字串，返回空字符串
+    return ""
+  }
+
   endShell() {
     this.stream.end(process.env.PROMPT_EXIT)
   }

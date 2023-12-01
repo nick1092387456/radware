@@ -2,6 +2,7 @@ const getDevices = require("./getDevices")
 const SSHConnector = require("./sshConnector")
 const { startSpinner, stopSpinner, updateSpinnerText } = require("./spinner")
 const { parseCSV } = require("./csvParse")
+const { getDeleteList } = require("./analystDeleteList")
 const { createLog, appendLogToCsv } = require("./logger")
 const {
   genDeleteFeature,
@@ -46,19 +47,16 @@ async function simulateDelay(duration) {
   return new Promise((resolve) => setTimeout(resolve, duration))
 }
 
-async function processDeleteCommands(sshConnector, device, urlList, initialId) {
-  for (const url of urlList) {
+async function processDeleteCommands(sshConnector, device, deleteList) {
+  for (const list of deleteList) {
     // 發送刪除特徵指令
-    const deleteFeatureCommand = genDeleteFeature(initialId++)
-    sshConnector.sendCommand(deleteFeatureCommand)
+    sshConnector.sendCommand(genDeleteFeature(list.id))
     if (!(await sshConnector.waitForPrompt("Deleted successfully")))
-      appendLogToCsv(url, device, "featureDeleteError") // 寫入錯誤日誌
-  }
-  for (const url of urlList) {
+      appendLogToCsv(list.attackName, device, "featureDeleteError") // 寫入錯誤日誌
     // 發送刪除過濾器指令
-    sshConnector.sendCommand(genDeleteFilter(url))
+    sshConnector.sendCommand(genDeleteFilter(list.attackName))
     if (!(await sshConnector.waitForPrompt("Deleted successfully")))
-      appendLogToCsv(url, device, "filterDeleteError") // 寫入錯誤日誌
+      appendLogToCsv(list.attackName, device, "filterDeleteError") // 寫入錯誤日誌
   }
 }
 
@@ -119,93 +117,11 @@ async function processAddCommand(
   }
 }
 
-//讀取RadWare裝置中已設定的資料，並解析出ID與過濾器名稱
-function getHistorySetting(output) {
-  // Split input string into lines
-  const lines = output.trim().split("\n")
-
-  // Initialize arrays to hold IDs and Filter Names
-  const ids = []
-  const filterNames = []
-
-  // Variable to keep track of the current parts of the Filter Name
-  let currentFilterParts = []
-
-  // Process each line
-  for (const line of lines) {
-    // Split line by whitespace
-    const fields = line.trim().split(/\s+/)
-
-    // If the line starts with a numeric ID, it's a new record
-    if (fields.length > 0 && /^\d+$/.test(fields[0])) {
-      if (currentFilterParts.length > 0) {
-        // Join the current Filter Name parts and remove the initial 'F_'
-        filterNames.push(currentFilterParts.join("").replace(/^F_/, ""))
-        currentFilterParts = []
-      }
-      // Add the ID
-      ids.push(fields[0])
-    }
-
-    // Detect Filter Name parts (starting with 'F_' or continuing from previous line)
-    if (
-      currentFilterParts.length > 0 ||
-      fields.some((field) => field.startsWith("F_"))
-    ) {
-      // Add all parts after 'F_' or the entire line if we're already in the middle of a Filter Name
-      const startIndex =
-        currentFilterParts.length > 0
-          ? 0
-          : fields.findIndex((field) => field.startsWith("F_"))
-      const parts = fields.slice(startIndex)
-
-      // Check if the last part is a number (indicating the end of the Filter Name and start of Tracking Time)
-      if (parts.length > 0 && /^\d+$/.test(parts[parts.length - 1])) {
-        // If there's a number, all before it are part of the Filter Name
-        currentFilterParts.push(...parts.slice(0, -1))
-        // Join the current Filter Name parts, remove the initial 'F_', and reset
-        filterNames.push(currentFilterParts.join("").replace(/^F_/, ""))
-        currentFilterParts = []
-      } else {
-        // No number means the Filter Name continues
-        currentFilterParts.push(...parts)
-      }
-    }
-  }
-
-  // Catch any trailing Filter Name parts in case the last line didn't end with an ID or a number
-  if (currentFilterParts.length > 0) {
-    filterNames.push(currentFilterParts.join("").replace(/^F_/, ""))
-  }
-
-  console.log("IDs:", ids)
-  console.log("Filter Names:", filterNames)
-  return { ids, filterNames }
-}
-
-async function processDeleteCommandsByGetHistorySettingOutput(
-  sshConnector,
-  urlList
-) {
-  const { ids, filterNames } = urlList
-  for (const id of ids) {
-    // 發送刪除特徵指令
-    const deleteFeatureCommand = genDeleteFeature(id)
-    sshConnector.sendCommand(deleteFeatureCommand)
-    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
-  }
-  for (const filterName of filterNames) {
-    // 發送刪除過濾器指令
-    sshConnector.sendCommand(genDeleteFilter(filterName))
-    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
-  }
-}
-
 async function main(device, spinner, urlLists) {
   globalSpinnerState[device.host] = `處理中...`
   updateGlobalSpinner(spinner, devices)
-
   const sshConnector = new SSHConnector(device)
+
   try {
     if (process.env.TEST_MODE === "true") await simulateDelay(3000)
     await sshConnector.connect()
@@ -217,12 +133,17 @@ async function main(device, spinner, urlLists) {
     sshConnector.sendCommand(initialCommand())
     await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
 
-    // 先刪除
-    const deleteList = await parseCSV(
-      `${device.host}_addSuccessList.csv`, //已包含HiNet與GSN
-      "./public/backup"
+    // 取得歷史清單
+    sshConnector.sendCommand("dp signatures-protection attacks user get")
+    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+    const oldSetting = await getOutputAfterPrompt(
+      "dp signatures-protection attacks user get"
     )
-    await processDeleteCommands(sshConnector, device.host, deleteList, 300001)
+    const deleteList = getDeleteList(oldSetting)
+    // 刪除歷史清單
+    if (deleteList.length > 0) {
+      await processDeleteCommands(sshConnector, device.host, deleteList)
+    }
 
     // 再寫入
     await processAddCommand(
