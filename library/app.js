@@ -242,16 +242,16 @@ async function main(device, spinner, urlLists) {
       device.host
     )
 
-    // 在終端機中顯示設定清單紀錄
-    sshConnector.sendCommand("dp signatures-protection attacks user get")
-    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
-
     // 寫入設定生效指令
     sshConnector.sendCommand(setCommand())
     await sshConnector.waitForPrompt("Updated successfully")
 
     // 寫入停止ssh config剪貼簿指令
     sshConnector.sendCommand(stopSystemConfigPaste())
+    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+
+    // 在終端機中顯示設定清單紀錄
+    sshConnector.sendCommand("dp signatures-protection attacks user get")
     await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
 
     // 取得終端console中的紀錄
