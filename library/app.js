@@ -54,10 +54,10 @@ async function selectFunction() {
       break
     case "explainOptions":
       console.log(
-        "選項一：刪除所有URL設定 - 此選項將從系統中刪除所有URL相關設定。"
+        "  選項一：刪除所有URL設定 - 此選項將從系統中刪除所有URL相關設定。"
       )
       console.log(
-        "選項二：寫入URL清單 - 將public資料夾中的'Hinet清單.csv'及'GSN清單.csv'寫入系統。(執行前會先刪除所有URL設定)\n"
+        "  選項二：寫入URL清單 - 將public資料夾中的'Hinet清單.csv'及'GSN清單.csv'寫入系統。(執行前會先刪除所有URL設定)\n"
       )
       await selectFunction() // 重新調用 selectFunction 以返回主頁
       break
