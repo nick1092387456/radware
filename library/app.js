@@ -26,15 +26,17 @@ async function selectFunction() {
   }
 
   const choices = [
-    { name: "執行主功能", value: "main" },
-    { name: "刪除所有URL設定", value: "deleteHistory" },
+    { name: "．刪除所有URL清單", value: "deleteHistory" },
+    { name: "．寫入URL清單", value: "main" },
+    { name: "．解釋選項一及選項二", value: "explainOptions" },
+    { name: "．離開", value: "exit" },
   ]
 
   const answer = await inquirer.prompt([
     {
       type: "list",
       name: "function",
-      message: "請選擇要執行的功能",
+      message: "請選擇要執行的功能: ",
       choices: choices,
     },
   ])
@@ -50,8 +52,21 @@ async function selectFunction() {
     case "deleteHistory":
       await handleDevices(devices, deleteHistory)
       break
+    case "explainOptions":
+      console.log(
+        "選項一：刪除所有URL設定 - 此選項將從系統中刪除所有URL相關設定。"
+      )
+      console.log(
+        "選項二：寫入URL清單 - 將public資料夾中的'Hinet清單.csv'及'GSN清單.csv'寫入系統。(執行前會先刪除所有URL設定)\n"
+      )
+      await selectFunction() // 重新調用 selectFunction 以返回主頁
+      break
+    case "exit":
+      console.log("已退出程式。")
+      process.exit(0)
+      break
     default:
-      console.log("  未知的功能選擇")
+      console.log("未知的功能選擇")
   }
 }
 
