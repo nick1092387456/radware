@@ -11,6 +11,9 @@ const parseData = (line, nextLine = "") => {
 }
 
 const getDeleteList = (data) => {
+  if (!data) {
+    return []
+  }
   const lines = data.split("\n")
   const result = []
   let currentData = null

@@ -17,15 +17,22 @@ async function createLog(content, device, type) {
   switch (type) {
     case "Log":
       location = "./cfg/Log"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD")}_${device}.log`
+      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH:mm")}_${device}.log`
       break
     case "Error":
       location = "./cfg/Error"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD")}_error.log`
+      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH:mm")}_error.log`
+      break
+    case "DeleteLog":
+      location = "./cfg/Log"
+      fileName = `${date.format(
+        new Date(),
+        "YYYY-MM-DD_HH:mm"
+      )}_${device}_deleted.log`
       break
     default:
       location = "./cfg/Error"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD")}_error.log`
+      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH:mm")}_error.log`
       break
   }
 

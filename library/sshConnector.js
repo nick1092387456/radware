@@ -122,7 +122,9 @@ class SSHConnector {
   }
 
   endShell() {
-    this.stream.end(process.env.PROMPT_EXIT)
+    if (this.stream && typeof this.stream.end === "function") {
+      this.stream.end(process.env.PROMPT_EXIT)
+    }
   }
 
   getOutput() {

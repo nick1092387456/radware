@@ -14,33 +14,66 @@ const {
   packCommand,
   setCommand,
 } = require("./commandGenerator")
-const readline = require("readline")
-const devices = getDevices()
+const inquirer = require("inquirer")
 
-let globalSpinnerState = {}
+async function selectFunction() {
+  let devices = []
+  try {
+    devices = getDevices()
+  } catch (error) {
+    console.error(error)
+    process.exit(1)
+  }
 
-function promptEnterKey() {
-  return new Promise((resolve) => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    })
+  const choices = [
+    { name: "執行主功能", value: "main" },
+    { name: "刪除所有URL設定", value: "deleteHistory" },
+  ]
 
-    rl.question("請按下 Enter 鍵結束...\n", () => {
-      rl.close()
-      resolve()
-    })
-  })
+  const answer = await inquirer.prompt([
+    {
+      type: "list",
+      name: "function",
+      message: "請選擇要執行的功能",
+      choices: choices,
+    },
+  ])
+
+  switch (answer.function) {
+    case "main":
+      const urlLists = {
+        hinet: await parseCSV("Hinet清單.csv"),
+        gsn: await parseCSV("GSN清單.csv"),
+      }
+      await handleDevices(devices, main, urlLists)
+      break
+    case "deleteHistory":
+      await handleDevices(devices, deleteHistory)
+      break
+    default:
+      console.log("  未知的功能選擇")
+  }
 }
 
-function updateGlobalSpinner(spinner, devices) {
-  const texts = devices.map(
-    (device, index) =>
-      `${index > 0 ? "  " : ""}${device.host} ${
-        globalSpinnerState[device.host]
-      }`
+function promptEnterKey() {
+  return inquirer.prompt([
+    {
+      type: "input",
+      name: "enterKey",
+      message: "請按下 Enter 鍵結束...",
+    },
+  ])
+}
+
+let globalSpinnerState = {}
+function updateGlobalSpinner(spinner, device, state) {
+  // 更新特定裝置的狀態
+  globalSpinnerState[device.host] = state
+  // 構建新的 spinner 文本，顯示所有裝置的狀態
+  const texts = Object.entries(globalSpinnerState).map(
+    ([host, st]) => `${host}: ${st}`
   )
-  updateSpinnerText(spinner, texts.join("\r\n"))
+  updateSpinnerText(spinner, texts.join("\r\n  "))
 }
 
 async function simulateDelay(duration) {
@@ -66,17 +99,18 @@ async function processAddCommand(
   listName,
   initialId,
   spinner,
-  deviceHost
+  device
 ) {
   for (let i = 0; i < urlList.length; i++) {
     const url = urlList[i]
     let isErrorOccurred = false // 標記是否發生錯誤
 
     // 更新 Spinner 文字為當前 URL 處理狀態
-    globalSpinnerState[deviceHost] = `正在處理: "${url}" ${listName} 第 ${
-      i + 1
-    } 筆`
-    updateGlobalSpinner(spinner, devices)
+    updateGlobalSpinner(
+      spinner,
+      device,
+      `正在處理: "${url}" ${listName} 第 ${i + 1} 筆`
+    )
 
     // 嘗試執行 SSH 命令並檢查其成功與否
     sshConnector.sendCommand(buildFilterCommand(url))
@@ -118,8 +152,73 @@ async function processAddCommand(
 }
 
 async function main(device, spinner, urlLists) {
-  globalSpinnerState[device.host] = `處理中...`
-  updateGlobalSpinner(spinner, devices)
+  updateGlobalSpinner(spinner, device, `處理中...`)
+  const sshConnector = new SSHConnector(device)
+  try {
+    if (process.env.TEST_MODE === "true") await simulateDelay(3000)
+    await sshConnector.connect()
+
+    if (process.env.TEST_MODE === "true") await simulateDelay(3000)
+    await sshConnector.startShell()
+
+    // 初始指令
+    sshConnector.sendCommand(initialCommand())
+    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+
+    // 取得歷史清單
+    sshConnector.sendCommand("dp signatures-protection attacks user get")
+    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+    const oldSetting = await getOutputAfterPrompt(
+      "dp signatures-protection attacks user get"
+    )
+    const deleteList = getDeleteList(oldSetting)
+    // 刪除歷史清單
+    if (deleteList.length > 0) {
+      await processDeleteCommands(sshConnector, device.host, deleteList)
+    }
+
+    // 寫入清單
+    await processAddCommand(
+      sshConnector,
+      urlLists.hinet,
+      "Hinet清單",
+      300001,
+      spinner,
+      device
+    )
+    await processAddCommand(
+      sshConnector,
+      urlLists.gsn,
+      "GSN清單",
+      urlLists.hinet.length + 300001,
+      spinner,
+      device
+    )
+
+    // 寫入設定生效指令
+    sshConnector.sendCommand(setCommand())
+    await sshConnector.waitForPrompt("Updated successfully")
+
+    // 寫入停止ssh config剪貼簿指令
+    sshConnector.sendCommand(stopSystemConfigPaste())
+    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+
+    // 在終端機中顯示設定清單紀錄
+    sshConnector.sendCommand("dp signatures-protection attacks user get")
+    await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
+
+    // 取得終端console中的紀錄
+    const output = sshConnector.getOutput()
+    await createLog(output, device.host, "Log")
+  } catch (error) {
+    throw error
+  } finally {
+    sshConnector.endShell()
+  }
+}
+
+async function deleteHistory(device, spinner) {
+  updateGlobalSpinner(spinner, device, `處理中...`)
   const sshConnector = new SSHConnector(device)
 
   try {
@@ -145,24 +244,6 @@ async function main(device, spinner, urlLists) {
       await processDeleteCommands(sshConnector, device.host, deleteList)
     }
 
-    // 再寫入
-    await processAddCommand(
-      sshConnector,
-      urlLists.hinet,
-      "Hinet清單",
-      300001,
-      spinner,
-      device.host
-    )
-    await processAddCommand(
-      sshConnector,
-      urlLists.gsn,
-      "GSN清單",
-      urlLists.hinet.length + 300001,
-      spinner,
-      device.host
-    )
-
     // 寫入設定生效指令
     sshConnector.sendCommand(setCommand())
     await sshConnector.waitForPrompt("Updated successfully")
@@ -177,33 +258,35 @@ async function main(device, spinner, urlLists) {
 
     // 取得終端console中的紀錄
     const output = sshConnector.getOutput()
-    await createLog(output, device.host, "Log")
+    await createLog(output, device.host, "DeleteLog")
   } catch (error) {
-    console.error("SSH 錯誤: ", error)
+    throw error
   } finally {
     sshConnector.endShell()
   }
 }
 
-async function handleDevices(devices) {
+async function handleDevices(devices, actionFunction, urlLists = null) {
   const spinner = startSpinner()
-  console.time("執行時間") // 開始計時
+  console.time("  執行時間")
   try {
     if (devices.length === 0) return
-    const urlLists = {
-      hinet: await parseCSV("Hinet清單.csv"),
-      gsn: await parseCSV("GSN清單.csv"),
-    }
-    const promises = devices.map((device) => main(device, spinner, urlLists))
+
+    const promises = urlLists
+      ? devices.map((device) => actionFunction(device, spinner, urlLists))
+      : devices.map((device) => actionFunction(device, spinner))
+
     await Promise.all(promises)
   } catch (error) {
-    console.error("處理裝置時出錯: ", error)
-  } finally {
-    stopSpinner(spinner, "所有裝置處理完成。\n")
-    console.timeEnd("執行時間") // 結束計時並輸出執行時間
+    stopSpinner(spinner, `處理裝置時發生錯誤: ${error}`, false)
+    console.timeEnd("  執行時間")
     await promptEnterKey()
-    process.exit(0)
+    process.exit(1)
   }
+  stopSpinner(spinner, "所有裝置處理完成。")
+  console.timeEnd("  執行時間")
+  await promptEnterKey()
+  process.exit(0)
 }
 
-handleDevices(devices)
+selectFunction()

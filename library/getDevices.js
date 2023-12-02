@@ -56,8 +56,7 @@ function getDevices() {
     }
     return devices
   } catch (error) {
-    console.log(`\x1b[31m\x1b[1m${error.message}\x1b[0m`)
-    return []
+    throw `\x1b[31m\x1b[1m${error.message}\x1b[0m`
   }
 }
 

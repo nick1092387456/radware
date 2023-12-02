@@ -40,10 +40,10 @@ async function parseCSV(csvFileName, csvFilePath = "./public") {
     const rowCount = URLList.length
     switch (csvFileName) {
       case "Hinet清單.csv":
-        console.log(`Hinet清單處理中，共 ${rowCount} 個網址...`)
+        console.log(`  Hinet清單處理中，共 ${rowCount} 個網址...`)
         break
       case "GSN清單.csv":
-        console.log(`GSN清單處理中，共 ${rowCount} 個網址...`)
+        console.log(`  GSN清單處理中，共 ${rowCount} 個網址...`)
         break
     }
 
