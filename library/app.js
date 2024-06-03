@@ -156,10 +156,10 @@ async function processAddCommand(
       const deleteFeatureCommand = genDeleteFeature(initialId)
       sshConnector.sendCommand(deleteFeatureCommand)
       await sshConnector.waitForPrompt("Deleted successfully")
-      appendLogToCsv(url, deviceHost, "AddError") // 寫入錯誤日誌
+      appendLogToCsv(url, device.host, "AddError") // 寫入錯誤日誌
       continue
     } else {
-      await appendLogToCsv(url, deviceHost, "AddSuccess") // 寫入成功日誌(Hinet與GSN會一起寫入)
+      await appendLogToCsv(url, device.host, "AddSuccess") // 寫入成功日誌(Hinet與GSN會一起寫入)
     }
 
     initialId++
@@ -183,7 +183,7 @@ async function main(device, spinner, urlLists) {
     // 取得歷史清單
     sshConnector.sendCommand("dp signatures-protection attacks user get")
     await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
-    const oldSetting = await getOutputAfterPrompt(
+    const oldSetting = sshConnector.getOutputAfterPrompt(
       "dp signatures-protection attacks user get"
     )
     const deleteList = getDeleteList(oldSetting)
@@ -250,7 +250,7 @@ async function deleteHistory(device, spinner) {
     // 取得歷史清單
     sshConnector.sendCommand("dp signatures-protection attacks user get")
     await sshConnector.waitForPrompt(process.env.PROMPT_STRING)
-    const oldSetting = await getOutputAfterPrompt(
+    const oldSetting = sshConnector.getOutputAfterPrompt(
       "dp signatures-protection attacks user get"
     )
     const deleteList = getDeleteList(oldSetting)
