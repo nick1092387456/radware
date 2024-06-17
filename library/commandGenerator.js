@@ -1,12 +1,11 @@
 // 產生刪除特徵碼指令
-function genDeleteFeature(idCount) {
-  return `dp signatures-protection attacks user del ${idCount}\r\n`
+function genDeleteFeature(count) {
+  return `\r\ndp signatures-protection attacks user del ${count}\r\n`
 }
 
 // 產生刪除過濾器指令
-function genDeleteFilter(url) {
-  const trimmedUrl = `F_${url.slice(0, 25)}`
-  return `dp signatures-protection filter basic-filters user del ${trimmedUrl}\r\n`
+function genDeleteFilter(count) {
+  return `\r\ndp signatures-protection filter basic-filters user del F_${count}\r\n`
 }
 
 // 啟動ssh config 剪貼簿
@@ -36,8 +35,8 @@ function stopSystemConfigPaste() {
 }
 
 // 產生過濾器指令
-function buildFilterCommand(url) {
-  let filterName = "F_" + url.slice(0, 25)
+function buildFilterCommand(url, serialNo) {
+  let filterName = "F_" + serialNo
   let urlParse = url
     .split(".")
     .map((str) => {
@@ -45,38 +44,35 @@ function buildFilterCommand(url) {
     })
     .join("")
   let contentMaxSearchLength = urlParse.length + 12
-  return `dp signatures-protection filter basic-filters user setCreate ${filterName} -p udp -o 2 -om f8400000 -oc Equal -ol "Two Bytes" -co 12 -c ${urlParse} -ct Text -cm ${contentMaxSearchLength} -ce "Case Insensitive" -rt "L4 Data" -dp dns -cr Yes`
+
+  const command = `dp signatures-protection filter basic-filters user setCreate ${filterName} -p udp -o 2 -om f8400000 -oc Equal -ol "Two Bytes" -co 12 -c ${urlParse} -ct Text -cm ${contentMaxSearchLength} -ce "Case Insensitive" -rt "L4 Data" -dp dns -cr Yes`
+
+  return command
 }
 
 // 產生特徵碼指令
-function buildFeatureCommand(url, fileName, idCount) {
-  let featureNameTitle = ""
-  switch (fileName) {
-    case "Hinet清單.csv":
-      featureNameTitle = "H_"
-      break
-    case "GSN清單.csv":
-      featureNameTitle = "G_"
-      break
-  }
+function buildFeatureCommand(fileName, serialNo) {
+  // let featureNameTitle = ""
+  // switch (fileName) {
+  //   case "Hinet清單.csv":
+  //     featureNameTitle = "H_"
+  //     break
+  //   case "GSN清單.csv":
+  //     featureNameTitle = "G_"
+  //     break
+  // }
 
-  let featureName = featureNameTitle + url
-  let filterName = "F_" + url
+  let featureName = "A_" + serialNo
+  let filterName = "F_" + serialNo
 
-  if (featureName.length > 27) {
-    featureName = featureName.slice(0, 27)
-  }
+  const command = `\r\n\r\n\r\ndp signatures-protection attacks user setCreate ${serialNo} -n ${featureName} -f ${filterName} -dr "In Bound" -tt 25`
 
-  if (filterName.length > 27) {
-    filterName = filterName.slice(0, 27)
-  }
-
-  return `dp signatures-protection attacks user setCreate ${idCount} -n ${featureName} -f ${filterName} -dr "In Bound" -tt 25`
+  return command
 }
 
 // 打包指令
 function packCommand(idCount) {
-  return `hidden attacks attributes create ${idCount} type_1 attribute_10001 -ti 1 -va 10001`
+  return `\r\n\r\n\r\nhidden attacks attributes create ${idCount} type_1 attribute_10001 -ti 1 -va 10001`
 }
 
 //設定生效指令

@@ -4,12 +4,6 @@ const date = require("date-and-time")
 const csv = require("fast-csv")
 const process = require("process")
 
-/**
- * 创建日志文件
- * @param {string} content - 要写入的内容
- * @param {string} device - 设备名称或标识
- * @param {string} type - 日志类型 (dailyLog, previousLog, CMDResponse, Error)
- */
 async function createLog(content, device, type) {
   let location = ""
   let fileName = ""
@@ -17,22 +11,22 @@ async function createLog(content, device, type) {
   switch (type) {
     case "Log":
       location = "./cfg/Log"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH:mm")}_${device}.log`
+      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH_mm")}_${device}.log`
       break
     case "Error":
       location = "./cfg/Error"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH:mm")}_error.log`
+      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH_mm")}_error.log`
       break
     case "DeleteLog":
       location = "./cfg/Log"
       fileName = `${date.format(
         new Date(),
-        "YYYY-MM-DD_HH:mm"
+        "YYYY-MM-DD_HH_mm"
       )}_${device}_deleted.log`
       break
     default:
       location = "./cfg/Error"
-      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH:mm")}_error.log`
+      fileName = `${date.format(new Date(), "YYYY-MM-DD_HH_mm")}_error.log`
       break
   }
 
@@ -46,17 +40,12 @@ async function createLog(content, device, type) {
       // 其他類型則創建或覆蓋文件
       await fs.promises.writeFile(filePath, content)
     }
+
+    console.log(`\r\n日志文件已保存至: ${filePath}`)
   } catch (err) {
     console.error(err)
   }
 }
-
-/**
- * 追加内容到现有日志文件
- * @param {string} content - 要追加的内容
- * @param {string} device - 设备名称或标识
- * @param {string} type - 日志类型 (dailyLog, previousLog, CMDResponse, Error)
- */
 
 async function appendLogToCsv(url, device, type) {
   async function getLastSN(fullPath) {

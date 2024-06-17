@@ -80,13 +80,37 @@ class SSHConnector {
     })
   }
 
+  // sendCommand(command) {
+  //   if (Array.isArray(command)) {
+  //     const commandString = command.join("\r\n")
+  //     this.stream.write(commandString + "\r\n")
+  //   } else {
+  //     this.stream.write(command + "\r\n")
+  //   }
+  // }
+
+  //調整 sendCommand 將之加上 Promise
   sendCommand(command) {
-    if (Array.isArray(command)) {
-      const commandString = command.join("\r\n")
-      this.stream.write(commandString + "\r\n")
-    } else {
-      this.stream.write(command + "\r\n")
-    }
+    return new Promise((resolve, reject) => {
+      if (Array.isArray(command)) {
+        const commandString = command.join("\r\n")
+        this.stream.write(commandString + "\r\n", (err) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
+      } else {
+        this.stream.write(command + "\r\n", (err) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
+      }
+    })
   }
 
   waitForPrompt(promptString, timeout = 3000) {
