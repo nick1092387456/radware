@@ -46,6 +46,19 @@ async function selectFunction() {
         hinet: await parseCSV("Hinet清單.csv"),
         gsn: await parseCSV("GSN清單.csv"),
       }
+
+      const hinetListLength = urlLists.hinet.length
+      const gsnListLength = urlLists.gsn.length
+      const totalLength = hinetListLength + gsnListLength
+
+      if (totalLength > 1000) {
+        console.error(
+          `總數量超過1000筆 (目前為 ${totalLength} 筆)，請減少輸入文件中的條目。`
+        )
+        process.exit(1)
+      }
+
+
       await handleDevices(devices, main, urlLists)
       break
     case "deleteHistory":
